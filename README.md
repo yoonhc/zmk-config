@@ -4,7 +4,7 @@ ZMK firmware configuration for a Tofu60 BLE 3.0 with an ANSI layout and a 7U spa
 
 ## Source
 
-The complete `config/boards/shields/klink_kbd` shield directory is copied unchanged from the OpenKBD [`260511`](https://github.com/openkbd/zmk-config-tofu60-ble-3.0/tree/260511/config/boards/shields/klink_kbd) release:
+The complete `config/boards/shields/klink_kbd` shield directory was imported from the OpenKBD [`260511`](https://github.com/openkbd/zmk-config-tofu60-ble-3.0/tree/260511/config/boards/shields/klink_kbd) release:
 
 - Repository: `openkbd/zmk-config-tofu60-ble-3.0`
 - Tag: `260511`
@@ -14,10 +14,14 @@ This repository combines the Tofu60 `260511` shield with verified, pinned ZMK an
 
 | Dependency | Pinned revision |
 | --- | --- |
-| [`yangdigi/zmk`](https://github.com/yangdigi/zmk) | `c526c062f974c87172782b8d964e2dd918e81923` |
+| [`zmkfirmware/zmk`](https://github.com/zmkfirmware/zmk) | `4ec69cb7e658590adf6354027aca789b364a70c5` |
 | [`yangdigi/zmk-keyboards-klink`](https://github.com/yangdigi/zmk-keyboards-klink) | `e80a8335563aec32a8f2c47cba697077291bfb99` |
 
-The reusable GitHub Actions workflow is pinned to the same `yangdigi/zmk` revision as the west manifest.
+The reusable GitHub Actions workflow is pinned to the same official ZMK revision as the west manifest.
+
+### Upstream ZMK compatibility change
+
+The OpenKBD `260511` shield enables `CONFIG_ZMK_HID_GENERIC_DESKTOP_USAGES_BASIC`, a setting that only exists in the `yangdigi/zmk` fork. The setting has been removed from `boards/klink.conf` so this configuration can build against official ZMK. The stock Tofu60 keymap does not reference the additional Generic Desktop usages supplied by that fork. All other files in the imported shield directory remain identical to the `260511` tag.
 
 ## Build
 
