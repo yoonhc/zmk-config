@@ -1,14 +1,17 @@
 manifest:
-  defaults:
-    revision: v0.3
   remotes:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware
-    # Additional modules containing boards/shields/custom code can be listed here as well
-    # See https://docs.zephyrproject.org/3.2.0/develop/west/manifest.html#projects
+    - name: yangdigi
+      url-base: https://github.com/yangdigi
   projects:
     - name: zmk
-      remote: zmkfirmware
+      remote: yangdigi
+      revision: c526c062f974c87172782b8d964e2dd918e81923
       import: app/west.yml
+    - name: zmk-keyboards-klink
+      remote: yangdigi
+      revision: e80a8335563aec32a8f2c47cba697077291bfb99
+      path: modules/zmk-keyboards-klink
   self:
     path: config
