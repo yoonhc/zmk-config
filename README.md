@@ -4,7 +4,7 @@ ZMK firmware configuration for a Tofu60 BLE 3.0 with an ANSI layout and a 7U spa
 
 ## Source
 
-The complete `config/boards/shields/klink_kbd` shield directory was imported from the OpenKBD [`260511`](https://github.com/openkbd/zmk-config-tofu60-ble-3.0/tree/260511/config/boards/shields/klink_kbd) release:
+The complete `boards/shields/klink_kbd` shield directory was imported from the OpenKBD [`260511`](https://github.com/openkbd/zmk-config-tofu60-ble-3.0/tree/260511/config/boards/shields/klink_kbd) release:
 
 - Repository: `openkbd/zmk-config-tofu60-ble-3.0`
 - Tag: `260511`
