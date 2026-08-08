@@ -32,7 +32,7 @@
             #binding-cells = <0>;
             bindings = <&kp SQT>, <&kp RIGHT>;
             mods = <MOD_LCTL>;
-            display-name = "Ctrl+' Right";
+            display-name = "Ctrl+Quote Right";
         };
 
         ctl_lbkt_up: control_left_bracket_up {

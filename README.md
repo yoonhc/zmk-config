@@ -44,7 +44,7 @@ The following zero-parameter mod-morph behaviors are available for assignment in
 | --- | --- | --- | --- |
 | `BSPC / DEL` | `&bspc_del` | Backspace | Left Shift: Delete; Right Shift: Right Shift + Delete |
 | `Ctrl+; Left` | `&ctl_semi_left` | `;` | Left Ctrl: Left Arrow |
-| `Ctrl+' Right` | `&ctl_sqt_right` | `'` | Left Ctrl: Right Arrow |
+| `Ctrl+Quote Right` | `&ctl_sqt_right` | `'` | Left Ctrl: Right Arrow |
 | `Ctrl+[ Up` | `&ctl_lbkt_up` | `[` | Left Ctrl: Up Arrow |
 | `Ctrl+/ Down` | `&ctl_fslh_down` | `/` | Left Ctrl: Down Arrow |
 | `Ctrl+] Caps` | `&ctl_rbkt_caps` | `]` | Left Ctrl: Caps Lock |
