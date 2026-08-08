@@ -1,0 +1,62 @@
+/*
+ * SPDX-License-Identifier: MIT
+ *
+ * Personal ZMK Studio behaviors for the Tofu60 BLE 3.0.
+ *
+ * Do not add /omit-if-no-ref/ to these behaviors.
+ * They must remain available in ZMK Studio even when the stock keymap
+ * does not reference them.
+ */
+
+/ {
+    behaviors {
+        bspc_del: backspace_delete {
+            compatible = "zmk,behavior-mod-morph";
+            #binding-cells = <0>;
+            bindings = <&kp BACKSPACE>, <&kp DELETE>;
+            mods = <(MOD_LSFT | MOD_RSFT)>;
+            keep-mods = <(MOD_RSFT)>;
+            display-name = "BSPC / DEL";
+        };
+
+        ctl_semi_left: control_semicolon_left {
+            compatible = "zmk,behavior-mod-morph";
+            #binding-cells = <0>;
+            bindings = <&kp SEMI>, <&kp LEFT>;
+            mods = <MOD_LCTL>;
+            display-name = "Ctrl+; Left";
+        };
+
+        ctl_sqt_right: control_quote_right {
+            compatible = "zmk,behavior-mod-morph";
+            #binding-cells = <0>;
+            bindings = <&kp SQT>, <&kp RIGHT>;
+            mods = <MOD_LCTL>;
+            display-name = "Ctrl+' Right";
+        };
+
+        ctl_lbkt_up: control_left_bracket_up {
+            compatible = "zmk,behavior-mod-morph";
+            #binding-cells = <0>;
+            bindings = <&kp LBKT>, <&kp UP>;
+            mods = <MOD_LCTL>;
+            display-name = "Ctrl+[ Up";
+        };
+
+        ctl_fslh_down: control_slash_down {
+            compatible = "zmk,behavior-mod-morph";
+            #binding-cells = <0>;
+            bindings = <&kp FSLH>, <&kp DOWN>;
+            mods = <MOD_LCTL>;
+            display-name = "Ctrl+/ Down";
+        };
+
+        ctl_rbkt_caps: control_right_bracket_caps_lock {
+            compatible = "zmk,behavior-mod-morph";
+            #binding-cells = <0>;
+            bindings = <&kp RBKT>, <&kp CAPSLOCK>;
+            mods = <MOD_LCTL>;
+            display-name = "Ctrl+] Caps";
+        };
+    };
+};

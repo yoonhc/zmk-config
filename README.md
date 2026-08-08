@@ -34,10 +34,27 @@ Push a commit or run the **Build ZMK firmware** workflow manually from the repos
 
 Download the generated firmware artifact from the completed workflow run and use the contained UF2 file to flash the keyboard.
 
+## Personal keymap and Studio behaviors
+
+`config/tofu60_ble_v3_ansi_7u.keymap` is the compiled stock keymap source for this build. It reproduces the effective OpenKBD `260511` common and ANSI keymaps without changing their bindings, then includes the personal behavior definitions from `config/behaviors/custom_behaviors.dtsi`.
+
+The following zero-parameter mod-morph behaviors are available for assignment in ZMK Studio:
+
+| Studio name | Binding | Normal press | Modified press |
+| --- | --- | --- | --- |
+| `BSPC / DEL` | `&bspc_del` | Backspace | Left Shift: Delete; Right Shift: Right Shift + Delete |
+| `Ctrl+; Left` | `&ctl_semi_left` | `;` | Left Ctrl: Left Arrow |
+| `Ctrl+' Right` | `&ctl_sqt_right` | `'` | Left Ctrl: Right Arrow |
+| `Ctrl+[ Up` | `&ctl_lbkt_up` | `[` | Left Ctrl: Up Arrow |
+| `Ctrl+/ Down` | `&ctl_fslh_down` | `/` | Left Ctrl: Down Arrow |
+| `Ctrl+] Caps` | `&ctl_rbkt_caps` | `]` | Left Ctrl: Caps Lock |
+
+The custom behavior nodes intentionally do not use `/omit-if-no-ref/`. They must remain in the compiled Devicetree even though the stock bindings do not reference them, so ZMK Studio can offer them for assignment. Only Left Ctrl triggers the Ctrl-based morphs; Right Ctrl continues to produce the original Ctrl-modified key.
+
+After flashing this firmware, reconnect ZMK Studio and assign these behaviors to the desired keys. Do not use **Restore Stock Settings** for this step; the existing persistent Studio keymap can be kept and edited in place.
+
 ## First-flash verification
 
 Do not use **Restore Stock Settings** in ZMK Studio during the first smoke test. A normal firmware flash preserves the existing Studio keymap, so this first test should cover boot, USB and BLE input, Studio connectivity, LED behavior, and whether every physical ANSI 7U switch produces input.
 
 Because the saved Studio keymap remains active, this smoke test does not verify the stock OpenKBD key assignments. Testing the stock keymap requires a separate, deliberate **Restore Stock Settings** operation, which removes the saved Studio keymap changes.
-
-New mod-morph and tap-dance instances will be added separately after this baseline firmware has been built and tested.
