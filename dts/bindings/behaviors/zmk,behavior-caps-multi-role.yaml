@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+
+description: Timestamp-driven Caps multi-role behavior
+
+compatible: "zmk,behavior-caps-multi-role"
+
+include: zero_param.yaml
+
+properties:
+  bindings:
+    type: phandle-array
+    required: true
+    description: LANG1 tap, Left Control hold, and momentary-layer bindings
+
+  tapping-term-ms:
+    type: int
+    required: true
+    description: Logical deadline measured from the first press timestamp

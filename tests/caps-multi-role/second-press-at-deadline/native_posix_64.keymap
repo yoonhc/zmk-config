@@ -1,0 +1,13 @@
+#include "../behavior_keymap.dtsi"
+
+&kscan {
+    events = <
+        ZMK_MOCK_PRESS(0, 0, 40)
+        ZMK_MOCK_RELEASE(0, 0, 218)
+        /* Exactly 260 ms from the first timestamp: start a new sequence. */
+        ZMK_MOCK_PRESS(0, 0, 40)
+        ZMK_MOCK_RELEASE(0, 0, 300)
+        ZMK_MOCK_PRESS(1, 1, 10)
+        ZMK_MOCK_RELEASE(1, 1, 10)
+    >;
+};

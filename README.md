@@ -36,7 +36,21 @@ Download the generated firmware artifact from the completed workflow run and use
 
 ## Personal keymap and Studio behaviors
 
-`config/tofu60_ble_v3_ansi_7u.keymap` is the compiled stock keymap source for this build. It reproduces the effective OpenKBD `260511` common and ANSI keymaps without changing their bindings, then includes the personal behavior definitions from `config/behaviors/custom_behaviors.dtsi`.
+`config/tofu60_ble_v3_ansi_7u.keymap` is the compiled stock keymap source for this build. It reproduces the effective OpenKBD `260511` common and ANSI keymaps, then includes the personal behavior definitions from `config/behaviors/custom_behaviors.dtsi`. The only changed stock binding is the base-layer Caps Lock position, which now uses `&caps_multi`.
+
+### Caps Multi-Role
+
+`Caps Multi-Role` is a custom, zero-parameter Studio behavior with a 260 ms logical deadline measured from the first press timestamp:
+
+| Input | Result |
+| --- | --- |
+| Tap once | `LANG1`, emitted when the sequence resolves |
+| Hold once, or press another key while holding | Left Control |
+| Tap, then press again within 260 ms | Momentary Layer 3 while the second press is held |
+
+If another key is pressed while a single tap is pending, `LANG1` is emitted before that key is processed. A second Caps press before the deadline cancels the pending `LANG1`; the second press and release do not execute the binding at the Caps position on Layer 3. At or after the logical deadline, the previous sequence resolves first and the next Caps press starts a new sequence.
+
+The implementation lives in `src/behaviors/behavior_caps_multi_role.c` and delegates its outputs to the three Devicetree child bindings `<&kp LANG1>, <&kp LCTRL>, <&mo 3>`. Timer callbacks validate both the current state and sequence generation so a cancelled callback cannot emit a stale `LANG1`.
 
 The following zero-parameter mod-morph behaviors are available for assignment in ZMK Studio:
 
@@ -51,7 +65,7 @@ The following zero-parameter mod-morph behaviors are available for assignment in
 
 The custom behavior nodes intentionally do not use `/omit-if-no-ref/`. They must remain in the compiled Devicetree even though the stock bindings do not reference them, so ZMK Studio can offer them for assignment. Only Left Ctrl triggers the Ctrl-based morphs; Right Ctrl continues to produce the original Ctrl-modified key.
 
-After flashing this firmware, reconnect ZMK Studio and assign these behaviors to the desired keys. Do not use **Restore Stock Settings** for this step; the existing persistent Studio keymap can be kept and edited in place.
+After flashing this firmware, reconnect ZMK Studio and assign `Caps Multi-Role` to the current Caps position, then assign the mod-morph behaviors to the desired keys. Do not use **Restore Stock Settings** for this step; the existing persistent Studio keymap and Layer 3 can be kept and edited in place.
 
 ## First-flash verification
 

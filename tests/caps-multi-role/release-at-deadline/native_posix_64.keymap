@@ -1,0 +1,9 @@
+#include "../behavior_keymap.dtsi"
+
+&kscan {
+    events = <
+        ZMK_MOCK_PRESS(0, 0, 259)
+        /* At/after the deadline this is a Control hold, never a LANG1 tap. */
+        ZMK_MOCK_RELEASE(0, 0, 10)
+    >;
+};

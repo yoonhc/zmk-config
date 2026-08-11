@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+
+menuconfig ZMK_BEHAVIOR_CAPS_MULTI_ROLE
+    bool "Caps multi-role behavior"
+    default y
+    depends on DT_HAS_ZMK_BEHAVIOR_CAPS_MULTI_ROLE_ENABLED
+    help
+      Enable the timestamp-driven Caps multi-role behavior.
+
+if ZMK_BEHAVIOR_CAPS_MULTI_ROLE
+
+config ZMK_BEHAVIOR_CAPS_MULTI_ROLE_MAX_ACTIVE
+    int "Maximum active Caps multi-role keys"
+    default 4
+    range 1 16
+    help
+      Maximum number of Caps multi-role sequences tracked at once.
+
+endif

@@ -10,6 +10,18 @@
 
 / {
     behaviors {
+        /*
+         * Do not add /omit-if-no-ref/ here. This behavior must remain
+         * selectable in Studio even if a future stock keymap stops using it.
+         */
+        caps_multi: caps_multi_role {
+            compatible = "zmk,behavior-caps-multi-role";
+            #binding-cells = <0>;
+            tapping-term-ms = <260>;
+            bindings = <&kp LANG1>, <&kp LCTRL>, <&mo 3>;
+            display-name = "Caps Multi-Role";
+        };
+
         bspc_del: backspace_delete {
             compatible = "zmk,behavior-mod-morph";
             #binding-cells = <0>;

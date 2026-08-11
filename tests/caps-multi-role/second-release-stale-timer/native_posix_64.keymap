@@ -1,0 +1,11 @@
+#include "../behavior_keymap.dtsi"
+
+&kscan {
+    events = <
+        ZMK_MOCK_PRESS(0, 0, 40)
+        ZMK_MOCK_RELEASE(0, 0, 80)
+        ZMK_MOCK_PRESS(0, 0, 300)
+        /* Cross the old first-press deadline while Layer 3 is held. */
+        ZMK_MOCK_RELEASE(0, 0, 10)
+    >;
+};

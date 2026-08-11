@@ -1,0 +1,11 @@
+#include "../behavior_keymap.dtsi"
+
+&kscan {
+    events = <
+        ZMK_MOCK_PRESS(0, 0, 40)
+        ZMK_MOCK_RELEASE(0, 0, 300)
+        /* Keep the simulator alive past the logical deadline. */
+        ZMK_MOCK_PRESS(1, 1, 10)
+        ZMK_MOCK_RELEASE(1, 1, 10)
+    >;
+};

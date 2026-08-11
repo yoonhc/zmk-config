@@ -1,0 +1,46 @@
+#include <behaviors.dtsi>
+#include <dt-bindings/zmk/keys.h>
+#include <dt-bindings/zmk/kscan_mock.h>
+
+/ {
+    behaviors {
+        caps_multi_test: caps_multi_test {
+            compatible = "zmk,behavior-caps-multi-role";
+            #binding-cells = <0>;
+            tapping-term-ms = <260>;
+            bindings = <&kp LANG1>, <&kp LCTRL>, <&mo 3>;
+        };
+    };
+
+    keymap {
+        compatible = "zmk,keymap";
+
+        default_layer {
+            bindings = <
+                &caps_multi_test &kp A
+                &kp C           &none
+            >;
+        };
+
+        layer_1 {
+            bindings = <
+                &trans &trans
+                &trans &trans
+            >;
+        };
+
+        layer_2 {
+            bindings = <
+                &trans &trans
+                &trans &trans
+            >;
+        };
+
+        layer_3 {
+            bindings = <
+                &kp X &kp B
+                &kp D &none
+            >;
+        };
+    };
+};

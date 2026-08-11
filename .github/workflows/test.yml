@@ -1,0 +1,31 @@
+name: Test custom behaviors
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  native-posix:
+    runs-on: ubuntu-latest
+    container:
+      image: zmkfirmware/zmk-build-arm:stable
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize west workspace
+        run: west init -l config
+
+      - name: Update pinned modules
+        run: west update --fetch-opt=--filter=tree:0
+
+      - name: Export Zephyr CMake package
+        run: west zephyr-export
+
+      - name: Run Caps Multi-Role tests
+        env:
+          ZMK_SRC_DIR: ${{ github.workspace }}/zmk/app
+          ZMK_BUILD_DIR: /tmp/zmk-caps-tests
+          ZMK_EXTRA_MODULES: ${{ github.workspace }}
+        run: zmk/app/run-test.sh tests/caps-multi-role
