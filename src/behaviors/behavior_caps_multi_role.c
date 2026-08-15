@@ -2,9 +2,9 @@
  * SPDX-License-Identifier: MIT
  *
  * A timestamp-driven three-way behavior:
- *   tap                  -> binding 0 (LANG1)
- *   hold / interrupted   -> binding 1 (Left Control)
- *   tap, then press/hold -> binding 2 (momentary Layer 3)
+ *   tap                  -> binding 0
+ *   hold / interrupted   -> binding 1
+ *   tap, then press/hold -> binding 2
  */
 
 #define DT_DRV_COMPAT zmk_behavior_caps_multi_role
@@ -41,8 +41,8 @@ enum caps_multi_state {
 };
 
 enum caps_multi_child {
-    CAPS_MULTI_LANG1,
-    CAPS_MULTI_LCTRL,
+    CAPS_MULTI_TAP,
+    CAPS_MULTI_HOLD,
     CAPS_MULTI_LAYER,
 };
 
@@ -88,14 +88,14 @@ static int invoke_child(const struct caps_multi_active *active, enum caps_multi_
 }
 
 static void invoke_tap(const struct caps_multi_active *active, int64_t timestamp) {
-    int err = invoke_child(active, CAPS_MULTI_LANG1, true, timestamp);
+    int err = invoke_child(active, CAPS_MULTI_TAP, true, timestamp);
     if (err < 0) {
-        LOG_ERR("Failed to press LANG1 child behavior: %d", err);
+        LOG_ERR("Failed to press tap child behavior: %d", err);
     }
 
-    err = invoke_child(active, CAPS_MULTI_LANG1, false, timestamp);
+    err = invoke_child(active, CAPS_MULTI_TAP, false, timestamp);
     if (err < 0) {
-        LOG_ERR("Failed to release LANG1 child behavior: %d", err);
+        LOG_ERR("Failed to release tap child behavior: %d", err);
     }
 }
 
@@ -139,9 +139,9 @@ static void resolve_first_hold(struct caps_multi_active *active, int64_t timesta
     invalidate_timer(active);
     active->state = CAPS_MULTI_CTRL_HELD;
 
-    int err = invoke_child(active, CAPS_MULTI_LCTRL, true, timestamp);
+    int err = invoke_child(active, CAPS_MULTI_HOLD, true, timestamp);
     if (err < 0) {
-        LOG_ERR("Failed to press Left Control child behavior: %d", err);
+        LOG_ERR("Failed to press hold child behavior: %d", err);
     }
 }
 
@@ -273,17 +273,17 @@ static int caps_multi_binding_released(struct zmk_behavior_binding *binding,
             active->state = CAPS_MULTI_TAP_PENDING;
         } else {
             resolve_first_hold(active, active->deadline);
-            int err = invoke_child(active, CAPS_MULTI_LCTRL, false, event.timestamp);
+            int err = invoke_child(active, CAPS_MULTI_HOLD, false, event.timestamp);
             if (err < 0) {
-                LOG_ERR("Failed to release Left Control child behavior: %d", err);
+                LOG_ERR("Failed to release hold child behavior: %d", err);
             }
             clear_active(active);
         }
         break;
     case CAPS_MULTI_CTRL_HELD: {
-        int err = invoke_child(active, CAPS_MULTI_LCTRL, false, event.timestamp);
+        int err = invoke_child(active, CAPS_MULTI_HOLD, false, event.timestamp);
         if (err < 0) {
-            LOG_ERR("Failed to release Left Control child behavior: %d", err);
+            LOG_ERR("Failed to release hold child behavior: %d", err);
         }
         clear_active(active);
         break;
@@ -327,10 +327,10 @@ static int caps_multi_position_listener(const zmk_event_t *event_header) {
         }
 
         if (active->state == CAPS_MULTI_FIRST_DOWN) {
-            /* Left Control must be down before this event reaches the keymap listener. */
+            /* The hold child must be down before this event reaches the keymap listener. */
             resolve_first_hold(active, event->timestamp);
         } else if (active->state == CAPS_MULTI_TAP_PENDING) {
-            /* Flush LANG1 before this event reaches the keymap listener. */
+            /* Flush the tap child before this event reaches the keymap listener. */
             resolve_pending_tap(active, event->timestamp);
         }
     }

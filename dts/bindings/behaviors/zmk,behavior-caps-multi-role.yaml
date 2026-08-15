@@ -10,7 +10,7 @@ properties:
   bindings:
     type: phandle-array
     required: true
-    description: LANG1 tap, Left Control hold, and momentary-layer bindings
+    description: Tap, hold, and momentary-layer bindings
 
   tapping-term-ms:
     type: int

@@ -40,17 +40,17 @@ Download the generated firmware artifact from the completed workflow run and use
 
 ### Caps Multi-Role
 
-`Caps Multi-Role` is a custom, zero-parameter Studio behavior with a 260 ms logical deadline measured from the first press timestamp:
+The two Caps Multi-Role variants are custom, zero-parameter Studio behaviors with a 260 ms logical deadline measured from the first press timestamp:
 
-| Input | Result |
-| --- | --- |
-| Tap once | `LANG1`, emitted when the sequence resolves |
-| Hold once, or press another key while holding | Left Control |
-| Tap, then press again within 260 ms | Momentary Layer 3 while the second press is held |
+| Input | `Caps Multi (Win)` | `Caps Multi (Mac)` |
+| --- | --- | --- |
+| Tap once | `LANG1` | Left Control + Space |
+| Hold once, or press another key while holding | Left Control | Left Control |
+| Tap, then press again within 260 ms | Momentary Layer 3 | Momentary Layer 3 |
 
-If another key is pressed while a single tap is pending, `LANG1` is emitted before that key is processed. A second Caps press before the deadline cancels the pending `LANG1`; the second press and release do not execute the binding at the Caps position on Layer 3. At or after the logical deadline, the previous sequence resolves first and the next Caps press starts a new sequence.
+If another key is pressed while a single tap is pending, the selected tap action is emitted before that key is processed. A second Caps press before the deadline cancels the pending tap action; the second press and release do not execute the binding at the Caps position on Layer 3. At or after the logical deadline, the previous sequence resolves first and the next Caps press starts a new sequence.
 
-The implementation lives in `src/behaviors/behavior_caps_multi_role.c` and delegates its outputs to the three Devicetree child bindings `<&kp LANG1>, <&kp LCTRL>, <&mo 3>`. Timer callbacks validate both the current state and sequence generation so a cancelled callback cannot emit a stale `LANG1`.
+The implementation lives in `src/behaviors/behavior_caps_multi_role.c` and delegates its outputs to three Devicetree child bindings. The Windows instance uses `<&kp LANG1>, <&kp LCTRL>, <&mo 3>`; the Mac instance uses `<&kp LC(SPACE)>, <&kp LCTRL>, <&mo 3>`. Timer callbacks validate both the current state and sequence generation so a cancelled callback cannot emit a stale tap action.
 
 The following zero-parameter mod-morph behaviors are available for assignment in ZMK Studio:
 
@@ -65,7 +65,7 @@ The following zero-parameter mod-morph behaviors are available for assignment in
 
 The custom behavior nodes intentionally do not use `/omit-if-no-ref/`. They must remain in the compiled Devicetree even though the stock bindings do not reference them, so ZMK Studio can offer them for assignment. Only Left Ctrl triggers the Ctrl-based morphs; Right Ctrl continues to produce the original Ctrl-modified key.
 
-After flashing this firmware, reconnect ZMK Studio and assign `Caps Multi-Role` to the current Caps position, then assign the mod-morph behaviors to the desired keys. Do not use **Restore Stock Settings** for this step; the existing persistent Studio keymap and Layer 3 can be kept and edited in place.
+After flashing this firmware, reconnect ZMK Studio and assign either `Caps Multi (Win)` or `Caps Multi (Mac)` to the current Caps position, then assign the mod-morph behaviors to the desired keys. The compiled stock binding remains the Windows instance (`&caps_multi`). Do not use **Restore Stock Settings** for this step; the existing persistent Studio keymap and Layer 3 can be kept and edited in place.
 
 ## First-flash verification
 

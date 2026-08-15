@@ -19,7 +19,15 @@
             #binding-cells = <0>;
             tapping-term-ms = <260>;
             bindings = <&kp LANG1>, <&kp LCTRL>, <&mo 3>;
-            display-name = "Caps Multi-Role";
+            display-name = "Caps Multi (Win)";
+        };
+
+        caps_multi_mac: caps_multi_role_mac {
+            compatible = "zmk,behavior-caps-multi-role";
+            #binding-cells = <0>;
+            tapping-term-ms = <260>;
+            bindings = <&kp LC(SPACE)>, <&kp LCTRL>, <&mo 3>;
+            display-name = "Caps Multi (Mac)";
         };
 
         bspc_del: backspace_delete {

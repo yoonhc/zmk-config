@@ -1,0 +1,18 @@
+#include "../behavior_keymap.dtsi"
+
+&default_layer {
+    bindings = <
+        &caps_multi_mac_test &kp A
+        &kp C               &none
+    >;
+};
+
+&kscan {
+    events = <
+        ZMK_MOCK_PRESS(0, 0, 40)
+        ZMK_MOCK_RELEASE(0, 0, 300)
+        /* Keep the simulator alive past the logical deadline. */
+        ZMK_MOCK_PRESS(1, 1, 10)
+        ZMK_MOCK_RELEASE(1, 1, 10)
+    >;
+};

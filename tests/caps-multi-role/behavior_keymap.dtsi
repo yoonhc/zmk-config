@@ -10,12 +10,19 @@
             tapping-term-ms = <260>;
             bindings = <&kp LANG1>, <&kp LCTRL>, <&mo 3>;
         };
+
+        caps_multi_mac_test: caps_multi_mac_test {
+            compatible = "zmk,behavior-caps-multi-role";
+            #binding-cells = <0>;
+            tapping-term-ms = <260>;
+            bindings = <&kp LC(SPACE)>, <&kp LCTRL>, <&mo 3>;
+        };
     };
 
     keymap {
         compatible = "zmk,keymap";
 
-        default_layer {
+        default_layer: default_layer {
             bindings = <
                 &caps_multi_test &kp A
                 &kp C           &none
