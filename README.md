@@ -59,6 +59,8 @@ Overlap instances use the same buffering but add a 35 ms simultaneous-press dead
 
 The Tunable variants expose that simultaneous-press deadline as the `Overlap (ms)` behavior parameter in ZMK Studio. Enter a value from 5 through 100 when assigning the behavior; 35 is the recommended starting value. The value is stored with that individual key binding in the persistent Studio keymap. It is sampled when Caps is pressed, so changing it affects the next sequence rather than one already in progress. Invalid values from a manually authored keymap fall back to 35 ms.
 
+See the [Caps Multi - Overlap Tunable behavior specification](docs/caps-multi-overlap-tunable.md) for the complete timing rules, state machine, boundary conditions, and examples.
+
 For every variant, pressing Caps a second time before the deadline cancels the pending tap and activates Momentary Layer 3 until the second Caps release. The second press and release do not execute the binding at the Caps position on Layer 3. At or after the logical deadline, the previous sequence resolves first and the next Caps press starts a new sequence.
 
 The implementation lives in `src/behaviors/behavior_caps_multi_role.c` and delegates its outputs to three Devicetree child bindings. PC instances use `<&kp LANG1>, <&kp LCTRL>, <&mo 3>`; Mac instances use `<&kp LC(SPACE)>, <&kp LCTRL>, <&mo 3>`. Timer callbacks and deferred capture ownership validate the current sequence generation so stale work cannot emit or replay input.
