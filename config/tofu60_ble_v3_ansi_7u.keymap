@@ -224,25 +224,42 @@
         default_layer {
 
             bindings = <
-    &gresc  &kp N1 &kp N2 &kp N3 &kp N4 &kp N5 &kp N6 &kp N7 &kp N8 &kp N9 &kp N0 &kp MINUS &kp EQUAL &kp BSLH &kp BSPC
-    &kp TAB    &kp Q  &kp W  &kp E  &kp R  &kp T  &kp Y  &kp U  &kp I  &kp O  &kp P  &kp LBKT  &kp RBKT  &kp BSLH
-    &caps_multi &kp A  &kp S  &kp D  &kp F  &kp G  &kp H  &kp J  &kp K  &kp L  &kp SEMI &kp SQT        &kp RET
-    &kp LSHFT &kp NUBS &kp Z  &kp X  &kp C  &kp V  &kp B  &kp N  &kp M  &kp COMMA &kp DOT &kp FSLH      &kp RSHIFT  &mo 1
-    &kp LCTRL &kp LGUI &kp LALT             &kp SPACE                       &mo 1  &kp RALT  &kp RGUI &kp RCTRL
+    &kp ESC &kp N1 &kp N2 &kp N3 &kp N4 &kp N5 &kp N6 &kp N7 &kp N8 &kp N9 &kp N0 &kp MINUS &kp EQUAL &kp BSLH &kp GRAVE
+    &kp TAB    &kp Q  &kp W  &kp E  &kp R  &kp T  &kp Y  &kp U  &kp I  &kp O  &kp P  &ctl_lbkt_up  &ctl_rbkt_caps  &bspc_del
+    &caps_multi &kp A  &kp S  &kp D  &kp F  &kp G  &kp H  &kp J  &kp K  &kp L  &ctl_semi_left &ctl_sqt_right &kp RET
+    &kp LSHFT &kp NUBS &kp Z  &kp X  &kp C  &kp V  &kp B  &kp N  &kp M  &kp COMMA &kp DOT &ctl_fslh_down &kp RSHIFT  &mo 2
+    &kp LCTRL &kp LGUI &kp LALT             &kp SPACE                       &mo 1  &kp RALT  &kp RGUI &none
             >;
         };
 
         layer1 {
             bindings = <
+    &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
+    &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
+    &caps_multi_mac &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
+    &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
+    &trans &kp LALT &kp LGUI              &trans                         &trans &kp RGUI &kp RALT &trans
+            >;
+        };
+
+        layer2 {
+            bindings = <
     &trans  &kp F1    &kp F2    &kp F3  &kp F4   &kp F5  &kp F6  &kp F7  &kp F8   &kp F9   &kp F10  &kp F11 &kp F12  &trans  &kp DELETE
-    &trans &trans    &kp UP    &trans  &trans   &trans  &trans  &Device_USB  &UF_BT1  &UF_BT2  &UF_BT3  &kp PRINTSCREEN  &kp SCROLLLOCK  &kp PAUSE_BREAK
-    &trans   &kp LEFT  &kp DOWN  &kp RIGHT &trans  &kp INSERT  &kp HOME  &kp END  &kp PAGE_UP  &kp PAGE_DOWN  &kp C_PREV  &kp C_PLAY_PAUSE     &trans
-    &trans &trans  &trans    &trans    &kp C_AL_CALC  &trans &UF_RESET  &trans  &kp C_MUTE  &kp C_VOL_DN  &kp C_VOL_UP   &kp C_NEXT   &trans  &trans
+    &trans &trans    &trans    &trans  &trans   &trans  &trans  &Device_USB  &UF_BT1  &UF_BT2  &UF_BT3  &kp UP           &trans          &trans
+    &trans   &trans    &trans    &trans    &trans  &kp INSERT  &kp HOME  &kp END  &kp PAGE_UP  &kp PAGE_DOWN  &kp LEFT  &kp RIGHT            &trans
+    &trans &trans  &trans    &trans    &kp C_AL_CALC  &trans &UF_RESET  &trans  &kp C_MUTE  &kp C_VOL_DN  &kp C_VOL_UP   &kp DOWN   &trans  &trans
     &trans  &trans   &trans                            &trans                                   &trans    &trans      &trans   &trans
             >;
         };
-        layer2 { status = "reserved"; };
-        layer3 { status = "reserved"; };
+        layer3 {
+            bindings = <
+    &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
+    &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &kp LC(LBKT) &kp LC(RBKT) &trans
+    &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &kp LC(SEMI) &kp LC(SQT) &trans
+    &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &kp LC(FSLH) &trans &trans
+    &trans &trans &trans                         &trans                         &trans &trans &trans &trans
+            >;
+        };
         layer4 { status = "reserved"; };
         layer5 { status = "reserved"; };
         layer6 { status = "reserved"; };
