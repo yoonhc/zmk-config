@@ -9,10 +9,10 @@
 
 &kscan {
     events = <
-        ZMK_MOCK_PRESS(0, 0, 50)
-        ZMK_MOCK_PRESS(0, 1, 230)
+        ZMK_MOCK_PRESS(0, 0, 230)
+        ZMK_MOCK_PRESS(0, 1, 30)
         /* The original 260 ms deadline arrives five ms before the overlap deadline. */
-        ZMK_MOCK_RELEASE(0, 1, 30)
+        ZMK_MOCK_RELEASE(0, 1, 20)
         ZMK_MOCK_RELEASE(0, 0, 20)
     >;
 };

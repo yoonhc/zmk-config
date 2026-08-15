@@ -9,10 +9,10 @@
 
 &kscan {
     events = <
-        ZMK_MOCK_PRESS(0, 0, 50)
-        ZMK_MOCK_PRESS(0, 1, 20)
-        /* Exactly 35 ms is on the Ctrl side of the boundary. */
-        ZMK_MOCK_RELEASE(0, 1, 35)
+        ZMK_MOCK_PRESS(0, 0, 20)
+        ZMK_MOCK_PRESS(0, 1, 35)
+        /* Caps releases first at exactly 35 ms, which is on the Ctrl side. */
         ZMK_MOCK_RELEASE(0, 0, 20)
+        ZMK_MOCK_RELEASE(0, 1, 20)
     >;
 };
