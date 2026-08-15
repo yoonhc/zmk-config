@@ -51,6 +51,20 @@
             interrupt-flavor = "overlap";
             bindings = <&kp LC(SPACE)>, <&kp LCTRL>, <&mo 3>;
         };
+
+        caps_multi_overlap_tunable_test: caps_ov_tunable_test {
+            compatible = "zmk,behavior-caps-multi-role-tunable";
+            #binding-cells = <1>;
+            tapping-term-ms = <260>;
+            bindings = <&kp LANG1>, <&kp LCTRL>, <&mo 3>;
+        };
+
+        caps_multi_overlap_tunable_mac_test: caps_ov_tunable_mac_test {
+            compatible = "zmk,behavior-caps-multi-role-tunable";
+            #binding-cells = <1>;
+            tapping-term-ms = <260>;
+            bindings = <&kp LC(SPACE)>, <&kp LCTRL>, <&mo 3>;
+        };
     };
 
     keymap {

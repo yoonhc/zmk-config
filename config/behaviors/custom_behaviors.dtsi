@@ -68,6 +68,22 @@
             display-name = "Caps Multi - Overlap (Mac)";
         };
 
+        caps_multi_overlap_tunable: caps_ov_tunable_pc {
+            compatible = "zmk,behavior-caps-multi-role-tunable";
+            #binding-cells = <1>;
+            tapping-term-ms = <260>;
+            bindings = <&kp LANG1>, <&kp LCTRL>, <&mo 3>;
+            display-name = "Caps Multi - Overlap Tunable (PC)";
+        };
+
+        caps_multi_overlap_tunable_mac: caps_ov_tunable_mac {
+            compatible = "zmk,behavior-caps-multi-role-tunable";
+            #binding-cells = <1>;
+            tapping-term-ms = <260>;
+            bindings = <&kp LC(SPACE)>, <&kp LCTRL>, <&mo 3>;
+            display-name = "Caps Multi - Overlap Tunable (Mac)";
+        };
+
         bspc_del: backspace_delete {
             compatible = "zmk,behavior-mod-morph";
             #binding-cells = <0>;

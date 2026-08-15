@@ -50,10 +50,14 @@ The Caps Multi-Role behaviors are custom, zero-parameter Studio behaviors with a
 | `Caps Multi - Balanced (Mac)` | Left Control + Space | Left Control | Release-order: Caps released first selects tap; the other key released first selects Control |
 | `Caps Multi - Overlap (PC)` | `LANG1` | Left Control | Hybrid: Caps released first before 35 ms selects tap; the first interrupt released first or 35 ms of overlap selects Control |
 | `Caps Multi - Overlap (Mac)` | Left Control + Space | Left Control | Hybrid: Caps released first before 35 ms selects tap; the first interrupt released first or 35 ms of overlap selects Control |
+| `Caps Multi - Overlap Tunable (PC)` | `LANG1` | Left Control | Same hybrid policy with a Studio-supplied 5–100 ms overlap term |
+| `Caps Multi - Overlap Tunable (Mac)` | Left Control + Space | Left Control | Same hybrid policy with a Studio-supplied 5–100 ms overlap term |
 
 For a Balanced instance, position events are buffered while release order is undecided. If Caps is released first, the tap action is emitted before the buffered key. If an interrupted key is released first, or the 260 ms deadline is reached, Control is pressed before the buffered events are replayed. This avoids accidental Control chords when a mechanical switch has not electrically released before the next key press.
 
 Overlap instances use the same buffering but add a 35 ms simultaneous-press deadline. Before that deadline, Caps releasing first selects tap and the first interrupt key releasing first selects Control. Reaching 35 ms while both remain down irreversibly selects Control, which remains held until Caps is released. Only the first interrupt key participates in the release-order decision; later captured keys are replayed under the selected result.
+
+The Tunable variants expose that simultaneous-press deadline as the `Overlap (ms)` behavior parameter in ZMK Studio. Enter a value from 5 through 100 when assigning the behavior; 35 is the recommended starting value. The value is stored with that individual key binding in the persistent Studio keymap. It is sampled when Caps is pressed, so changing it affects the next sequence rather than one already in progress. Invalid values from a manually authored keymap fall back to 35 ms.
 
 For every variant, pressing Caps a second time before the deadline cancels the pending tap and activates Momentary Layer 3 until the second Caps release. The second press and release do not execute the binding at the Caps position on Layer 3. At or after the logical deadline, the previous sequence resolves first and the next Caps press starts a new sequence.
 
@@ -72,7 +76,7 @@ The following zero-parameter mod-morph behaviors are available for assignment in
 
 The custom behavior nodes intentionally do not use `/omit-if-no-ref/`. They must remain in the compiled Devicetree even when a stock binding does not reference them, so ZMK Studio can offer them for assignment. Only Left Ctrl triggers the Ctrl-based morphs; Right Ctrl continues to produce the original Ctrl-modified key.
 
-The compiled stock keymap uses `Caps Multi - Overlap (PC)` on the PC base layer and `Caps Multi - Overlap (Mac)` on the Mac layer. A normal flash preserves the existing persistent Studio keymap, so reconnect Studio and assign the corresponding Overlap behavior manually to use it without restoring stock settings. The original hold-preferred and Balanced variants remain available for comparison.
+The compiled stock keymap uses the fixed `Caps Multi - Overlap (PC)` on the PC base layer and fixed `Caps Multi - Overlap (Mac)` on the Mac layer. A normal flash preserves the existing persistent Studio keymap, so reconnect Studio and assign either Tunable behavior with an explicit term to experiment without restoring stock settings. The fixed, hold-preferred, and Balanced variants remain available for comparison.
 
 ## First-flash verification
 

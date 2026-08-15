@@ -13,6 +13,7 @@
  */
 
 #define DT_DRV_COMPAT zmk_behavior_caps_multi_role
+#define CAPS_MULTI_TUNABLE_COMPAT zmk_behavior_caps_multi_role_tunable
 
 #include <errno.h>
 #include <stdint.h>
@@ -31,10 +32,14 @@
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT) ||                                                \
+    DT_HAS_COMPAT_STATUS_OKAY(CAPS_MULTI_TUNABLE_COMPAT)
 
 #define CAPS_MULTI_POSITION_FREE UINT32_MAX
 #define CAPS_MULTI_BINDING_COUNT 3
+#define CAPS_MULTI_OVERLAP_DEFAULT_MS 35
+#define CAPS_MULTI_OVERLAP_MIN_MS 5
+#define CAPS_MULTI_OVERLAP_MAX_MS 100
 #define CAPS_MULTI_MAX_ACTIVE CONFIG_ZMK_BEHAVIOR_CAPS_MULTI_ROLE_MAX_ACTIVE
 #define CAPS_MULTI_MAX_CAPTURED_EVENTS                                                        \
     CONFIG_ZMK_BEHAVIOR_CAPS_MULTI_ROLE_MAX_CAPTURED_EVENTS
@@ -62,6 +67,7 @@ enum caps_multi_child {
 struct caps_multi_config {
     uint32_t tapping_term_ms;
     uint32_t overlap_term_ms;
+    bool overlap_term_from_param;
     enum caps_multi_interrupt_flavor interrupt_flavor;
     struct zmk_behavior_binding bindings[CAPS_MULTI_BINDING_COUNT];
 };
@@ -73,6 +79,7 @@ struct caps_multi_active {
     uint8_t source;
 #endif
     const struct caps_multi_config *config;
+    uint32_t overlap_term_ms;
     int64_t deadline;
     int64_t timer_deadline;
     uint32_t generation;
@@ -231,6 +238,7 @@ static void clear_active(struct caps_multi_active *active) {
     active->state = CAPS_MULTI_FREE;
     active->position = CAPS_MULTI_POSITION_FREE;
     active->config = NULL;
+    active->overlap_term_ms = 0;
     active->deadline = 0;
     active->timer_deadline = 0;
 }
@@ -328,7 +336,23 @@ static struct caps_multi_active *allocate_active(void) {
     return NULL;
 }
 
-static int start_first_press(const struct caps_multi_config *config,
+static uint32_t overlap_term_for_binding(const struct caps_multi_config *config,
+                                         const struct zmk_behavior_binding *binding) {
+    if (!config->overlap_term_from_param) {
+        return config->overlap_term_ms;
+    }
+
+    if (binding->param1 < CAPS_MULTI_OVERLAP_MIN_MS ||
+        binding->param1 > CAPS_MULTI_OVERLAP_MAX_MS) {
+        LOG_WRN("Invalid tunable overlap term %u ms; using %u ms", binding->param1,
+                CAPS_MULTI_OVERLAP_DEFAULT_MS);
+        return CAPS_MULTI_OVERLAP_DEFAULT_MS;
+    }
+
+    return binding->param1;
+}
+
+static int start_first_press(const struct caps_multi_config *config, uint32_t overlap_term_ms,
                              struct zmk_behavior_binding_event event) {
     struct caps_multi_active *active = allocate_active();
     if (active == NULL) {
@@ -347,6 +371,7 @@ static int start_first_press(const struct caps_multi_config *config,
     active->source = event.source;
 #endif
     active->config = config;
+    active->overlap_term_ms = overlap_term_ms;
     active->deadline = event.timestamp + config->tapping_term_ms;
     active->timer_cleanup_pending = false;
     schedule_deadline(active, active->deadline);
@@ -358,10 +383,11 @@ static int caps_multi_binding_pressed(struct zmk_behavior_binding *binding,
                                       struct zmk_behavior_binding_event event) {
     const struct device *dev = zmk_behavior_get_binding(binding->behavior_dev);
     const struct caps_multi_config *config = dev->config;
+    uint32_t overlap_term_ms = overlap_term_for_binding(config, binding);
     struct caps_multi_active *active = find_active(event.position);
 
     if (active == NULL) {
-        start_first_press(config, event);
+        start_first_press(config, overlap_term_ms, event);
         return ZMK_BEHAVIOR_OPAQUE;
     }
 
@@ -372,7 +398,7 @@ static int caps_multi_binding_pressed(struct zmk_behavior_binding *binding,
 
     if (event.timestamp >= active->deadline) {
         resolve_pending_tap(active, active->deadline);
-        start_first_press(config, event);
+        start_first_press(config, overlap_term_ms, event);
         return ZMK_BEHAVIOR_OPAQUE;
     }
 
@@ -522,8 +548,7 @@ static int caps_multi_position_listener(const zmk_event_t *event_header) {
                 }
 
                 if (is_overlap(active)) {
-                    int64_t overlap_deadline =
-                        event->timestamp + active->config->overlap_term_ms;
+                    int64_t overlap_deadline = event->timestamp + active->overlap_term_ms;
                     schedule_deadline(active, MIN(active->deadline, overlap_deadline));
                 }
 
@@ -552,6 +577,36 @@ static const struct behavior_driver_api caps_multi_driver_api = {
 #endif
 };
 
+#if IS_ENABLED(CONFIG_ZMK_BEHAVIOR_METADATA)
+
+static const struct behavior_parameter_value_metadata caps_multi_overlap_param_values[] = {
+    {
+        .display_name = "Overlap (ms)",
+        .type = BEHAVIOR_PARAMETER_VALUE_TYPE_RANGE,
+        .range = {.min = CAPS_MULTI_OVERLAP_MIN_MS, .max = CAPS_MULTI_OVERLAP_MAX_MS},
+    },
+};
+
+static const struct behavior_parameter_metadata_set caps_multi_overlap_param_set[] = {{
+    .param1_values = caps_multi_overlap_param_values,
+    .param1_values_len = ARRAY_SIZE(caps_multi_overlap_param_values),
+}};
+
+static const struct behavior_parameter_metadata caps_multi_overlap_metadata = {
+    .sets_len = ARRAY_SIZE(caps_multi_overlap_param_set),
+    .sets = caps_multi_overlap_param_set,
+};
+
+#endif
+
+static const struct behavior_driver_api caps_multi_tunable_driver_api = {
+    .binding_pressed = caps_multi_binding_pressed,
+    .binding_released = caps_multi_binding_released,
+#if IS_ENABLED(CONFIG_ZMK_BEHAVIOR_METADATA)
+    .parameter_metadata = &caps_multi_overlap_metadata,
+#endif
+};
+
 static int caps_multi_init(const struct device *dev) {
     ARG_UNUSED(dev);
     static bool initialized;
@@ -568,20 +623,31 @@ static int caps_multi_init(const struct device *dev) {
     return 0;
 }
 
-#define CAPS_MULTI_INST(n)                                                                        \
-    BUILD_ASSERT(DT_INST_PROP_LEN(n, bindings) == CAPS_MULTI_BINDING_COUNT,                       \
-                 "Caps multi-role requires exactly three bindings");                            \
-    static const struct caps_multi_config caps_multi_config_##n = {                              \
-        .tapping_term_ms = DT_INST_PROP(n, tapping_term_ms),                                     \
-        .overlap_term_ms = DT_INST_PROP(n, overlap_term_ms),                                     \
-        .interrupt_flavor = DT_INST_ENUM_IDX_OR(n, interrupt_flavor, 0),                         \
-        .bindings = {ZMK_KEYMAP_EXTRACT_BINDING(0, DT_DRV_INST(n)),                              \
-                     ZMK_KEYMAP_EXTRACT_BINDING(1, DT_DRV_INST(n)),                              \
-                     ZMK_KEYMAP_EXTRACT_BINDING(2, DT_DRV_INST(n))},                             \
-    };                                                                                            \
-    BEHAVIOR_DT_INST_DEFINE(n, caps_multi_init, NULL, NULL, &caps_multi_config_##n, POST_KERNEL, \
-                            CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &caps_multi_driver_api);
+#define CAPS_MULTI_DRIVER_API(node_id)                                                            \
+    COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, CAPS_MULTI_TUNABLE_COMPAT),                           \
+                (&caps_multi_tunable_driver_api), (&caps_multi_driver_api))
 
-DT_INST_FOREACH_STATUS_OKAY(CAPS_MULTI_INST)
+#define CAPS_MULTI_NODE(node_id)                                                                  \
+    BUILD_ASSERT(DT_PROP_LEN(node_id, bindings) == CAPS_MULTI_BINDING_COUNT,                      \
+                 "Caps multi-role requires exactly three bindings");                            \
+    static const struct caps_multi_config caps_multi_config_##node_id = {                        \
+        .tapping_term_ms = DT_PROP(node_id, tapping_term_ms),                                    \
+        .overlap_term_ms =                                                                       \
+            DT_PROP_OR(node_id, overlap_term_ms, CAPS_MULTI_OVERLAP_DEFAULT_MS),                  \
+        .overlap_term_from_param =                                                                \
+            DT_NODE_HAS_COMPAT(node_id, CAPS_MULTI_TUNABLE_COMPAT),                              \
+        .interrupt_flavor = DT_NODE_HAS_COMPAT(node_id, CAPS_MULTI_TUNABLE_COMPAT)               \
+                                ? CAPS_MULTI_OVERLAP                                              \
+                                : DT_ENUM_IDX_OR(node_id, interrupt_flavor, 0),                   \
+        .bindings = {ZMK_KEYMAP_EXTRACT_BINDING(0, node_id),                                     \
+                     ZMK_KEYMAP_EXTRACT_BINDING(1, node_id),                                     \
+                     ZMK_KEYMAP_EXTRACT_BINDING(2, node_id)},                                    \
+    };                                                                                            \
+    BEHAVIOR_DT_DEFINE(node_id, caps_multi_init, NULL, NULL, &caps_multi_config_##node_id,        \
+                       POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,                          \
+                       CAPS_MULTI_DRIVER_API(node_id));
+
+DT_FOREACH_STATUS_OKAY(zmk_behavior_caps_multi_role, CAPS_MULTI_NODE)
+DT_FOREACH_STATUS_OKAY(CAPS_MULTI_TUNABLE_COMPAT, CAPS_MULTI_NODE)
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT) */

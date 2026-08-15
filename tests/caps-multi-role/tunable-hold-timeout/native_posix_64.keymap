@@ -1,0 +1,15 @@
+#include "../behavior_keymap.dtsi"
+
+&default_layer {
+    bindings = <
+        &caps_multi_overlap_tunable_test 75 &kp A
+        &kp C                              &none
+    >;
+};
+
+&kscan {
+    events = <
+        ZMK_MOCK_PRESS(0, 0, 300)
+        ZMK_MOCK_RELEASE(0, 0, 20)
+    >;
+};

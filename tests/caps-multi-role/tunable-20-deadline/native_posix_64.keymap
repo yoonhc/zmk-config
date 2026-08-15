@@ -1,0 +1,18 @@
+#include "../behavior_keymap.dtsi"
+
+&default_layer {
+    bindings = <
+        &caps_multi_overlap_tunable_test 20 &kp A
+        &kp C                              &none
+    >;
+};
+
+&kscan {
+    events = <
+        ZMK_MOCK_PRESS(0, 0, 10)
+        ZMK_MOCK_PRESS(0, 1, 20)
+        /* Caps releases first at the configured 20 ms deadline, so Ctrl wins. */
+        ZMK_MOCK_RELEASE(0, 0, 20)
+        ZMK_MOCK_RELEASE(0, 1, 20)
+    >;
+};

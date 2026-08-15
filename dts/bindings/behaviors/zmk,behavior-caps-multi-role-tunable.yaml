@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+
+description: Timestamp-driven Caps multi-role behavior with a binding-supplied overlap term
+
+compatible: "zmk,behavior-caps-multi-role-tunable"
+
+include: one_param.yaml
+
+properties:
+  bindings:
+    type: phandle-array
+    required: true
+    description: Tap, hold, and momentary-layer bindings
+
+  tapping-term-ms:
+    type: int
+    required: true
+    description: Logical deadline measured from the first press timestamp
