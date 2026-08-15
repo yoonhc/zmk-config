@@ -34,8 +34,7 @@
             compatible = "zmk,behavior-mod-morph";
             #binding-cells = <0>;
             bindings = <&kp BACKSPACE>, <&kp DELETE>;
-            mods = <(MOD_LSFT | MOD_RSFT)>;
-            keep-mods = <(MOD_RSFT)>;
+            mods = <MOD_LSFT>;
             display-name = "BSPC / DEL";
         };
 
