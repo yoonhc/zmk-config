@@ -3,7 +3,8 @@
 menuconfig ZMK_BEHAVIOR_CAPS_MULTI_ROLE
     bool "Caps multi-role behavior"
     default y
-    depends on DT_HAS_ZMK_BEHAVIOR_CAPS_MULTI_ROLE_ENABLED
+    depends on DT_HAS_ZMK_BEHAVIOR_CAPS_MULTI_ROLE_ENABLED || \
+               DT_HAS_ZMK_BEHAVIOR_CAPS_MULTI_ROLE_TUNABLE_ENABLED
     help
       Enable the timestamp-driven Caps multi-role behavior.
 
@@ -17,11 +18,11 @@ config ZMK_BEHAVIOR_CAPS_MULTI_ROLE_MAX_ACTIVE
       Maximum number of Caps multi-role sequences tracked at once.
 
 config ZMK_BEHAVIOR_CAPS_MULTI_ROLE_MAX_CAPTURED_EVENTS
-    int "Maximum events captured by a balanced Caps multi-role key"
+    int "Maximum events captured by a deferred Caps multi-role key"
     default 16
     range 2 64
     help
-      Maximum number of position events buffered while a balanced
-      Caps multi-role key waits for release-order resolution.
+      Maximum number of position events buffered while a balanced or
+      overlap Caps multi-role key waits for resolution.
 
 endif

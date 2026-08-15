@@ -40,7 +40,7 @@ Download the generated firmware artifact from the completed workflow run and use
 
 ### Caps Multi-Role
 
-The Caps Multi-Role behaviors are custom, zero-parameter Studio behaviors with a 260 ms logical deadline measured from the first press timestamp. Each PC/Mac output variant is available with three interrupt policies:
+The Caps Multi-Role behaviors are custom Studio behaviors with a 260 ms logical deadline measured from the first press timestamp. Fixed variants are zero-parameter behaviors, while Tunable variants accept one overlap parameter. Each PC/Mac output variant is available with three interrupt policies:
 
 | Studio behavior | Tap | Hold | Interrupt policy |
 | --- | --- | --- | --- |

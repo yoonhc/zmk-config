@@ -1,0 +1,18 @@
+#include "../behavior_keymap.dtsi"
+
+&default_layer {
+    bindings = <
+        &caps_multi_overlap_tunable_test 101 &kp A
+        &kp C                                &none
+    >;
+};
+
+&kscan {
+    events = <
+        ZMK_MOCK_PRESS(0, 0, 10)
+        ZMK_MOCK_PRESS(0, 1, 40)
+        /* Invalid 101 falls back to the default term, so 40 ms confirms Ctrl. */
+        ZMK_MOCK_RELEASE(0, 0, 20)
+        ZMK_MOCK_RELEASE(0, 1, 20)
+    >;
+};
