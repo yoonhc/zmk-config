@@ -226,7 +226,7 @@
             bindings = <
     &kp ESC &kp N1 &kp N2 &kp N3 &kp N4 &kp N5 &kp N6 &kp N7 &kp N8 &kp N9 &kp N0 &kp MINUS &kp EQUAL &kp BSLH &kp GRAVE
     &kp TAB    &kp Q  &kp W  &kp E  &kp R  &kp T  &kp Y  &kp U  &kp I  &kp O  &kp P  &ctl_lbkt_up  &ctl_rbkt_caps  &bspc_del
-    &caps_multi_balanced &kp A  &kp S  &kp D  &kp F  &kp G  &kp H  &kp J  &kp K  &kp L  &ctl_semi_left &ctl_sqt_right &kp RET
+    &caps_multi_overlap &kp A  &kp S  &kp D  &kp F  &kp G  &kp H  &kp J  &kp K  &kp L  &ctl_semi_left &ctl_sqt_right &kp RET
     &kp LSHFT &kp NUBS &kp Z  &kp X  &kp C  &kp V  &kp B  &kp N  &kp M  &kp COMMA &kp DOT &ctl_fslh_down &kp RSHIFT  &mo 2
     &kp LCTRL &kp LGUI &kp LALT             &kp SPACE                       &mo 1  &kp RALT  &kp RGUI &none
             >;
@@ -236,7 +236,7 @@
             bindings = <
     &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
     &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
-    &caps_multi_balanced_mac &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
+    &caps_multi_overlap_mac &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
     &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans &trans
     &trans &kp LALT &kp LGUI              &trans                         &trans &kp RGUI &kp RALT &trans
             >;

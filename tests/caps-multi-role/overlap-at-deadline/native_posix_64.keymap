@@ -1,0 +1,18 @@
+#include "../behavior_keymap.dtsi"
+
+&default_layer {
+    bindings = <
+        &caps_multi_overlap_test &kp A
+        &kp C                   &none
+    >;
+};
+
+&kscan {
+    events = <
+        ZMK_MOCK_PRESS(0, 0, 50)
+        ZMK_MOCK_PRESS(0, 1, 20)
+        /* Exactly 35 ms is on the Ctrl side of the boundary. */
+        ZMK_MOCK_RELEASE(0, 1, 35)
+        ZMK_MOCK_RELEASE(0, 0, 20)
+    >;
+};

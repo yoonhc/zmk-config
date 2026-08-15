@@ -1,0 +1,18 @@
+#include "../behavior_keymap.dtsi"
+
+&default_layer {
+    bindings = <
+        &caps_multi_overlap_test &kp A
+        &kp C                   &none
+    >;
+};
+
+&kscan {
+    events = <
+        ZMK_MOCK_PRESS(0, 0, 50)
+        ZMK_MOCK_PRESS(0, 1, 20)
+        /* Once 35 ms confirms Ctrl, releasing Caps first cannot turn it into a tap. */
+        ZMK_MOCK_RELEASE(0, 0, 50)
+        ZMK_MOCK_RELEASE(0, 1, 20)
+    >;
+};

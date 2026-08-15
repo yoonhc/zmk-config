@@ -1,0 +1,18 @@
+#include "../behavior_keymap.dtsi"
+
+&default_layer {
+    bindings = <
+        &caps_multi_overlap_test &kp A
+        &kp C                   &none
+    >;
+};
+
+&kscan {
+    events = <
+        ZMK_MOCK_PRESS(0, 0, 50)
+        ZMK_MOCK_PRESS(0, 1, 20)
+        /* The first interrupt wins before 35 ms and immediately confirms Ctrl. */
+        ZMK_MOCK_RELEASE(0, 1, 30)
+        ZMK_MOCK_RELEASE(0, 0, 20)
+    >;
+};

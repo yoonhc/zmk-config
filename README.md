@@ -40,7 +40,7 @@ Download the generated firmware artifact from the completed workflow run and use
 
 ### Caps Multi-Role
 
-The Caps Multi-Role behaviors are custom, zero-parameter Studio behaviors with a 260 ms logical deadline measured from the first press timestamp. Each PC/Mac output variant is available with two interrupt policies:
+The Caps Multi-Role behaviors are custom, zero-parameter Studio behaviors with a 260 ms logical deadline measured from the first press timestamp. Each PC/Mac output variant is available with three interrupt policies:
 
 | Studio behavior | Tap | Hold | Interrupt policy |
 | --- | --- | --- | --- |
@@ -48,12 +48,16 @@ The Caps Multi-Role behaviors are custom, zero-parameter Studio behaviors with a
 | `Caps Multi (Mac)` | Left Control + Space | Left Control | Hold-preferred: another key press immediately selects Control |
 | `Caps Multi - Balanced (PC)` | `LANG1` | Left Control | Release-order: Caps released first selects tap; the other key released first selects Control |
 | `Caps Multi - Balanced (Mac)` | Left Control + Space | Left Control | Release-order: Caps released first selects tap; the other key released first selects Control |
+| `Caps Multi - Overlap (PC)` | `LANG1` | Left Control | Hybrid: Caps released first before 35 ms selects tap; the first interrupt released first or 35 ms of overlap selects Control |
+| `Caps Multi - Overlap (Mac)` | Left Control + Space | Left Control | Hybrid: Caps released first before 35 ms selects tap; the first interrupt released first or 35 ms of overlap selects Control |
 
 For a Balanced instance, position events are buffered while release order is undecided. If Caps is released first, the tap action is emitted before the buffered key. If an interrupted key is released first, or the 260 ms deadline is reached, Control is pressed before the buffered events are replayed. This avoids accidental Control chords when a mechanical switch has not electrically released before the next key press.
 
+Overlap instances use the same buffering but add a 35 ms simultaneous-press deadline. Before that deadline, Caps releasing first selects tap and the first interrupt key releasing first selects Control. Reaching 35 ms while both remain down irreversibly selects Control, which remains held until Caps is released. Only the first interrupt key participates in the release-order decision; later captured keys are replayed under the selected result.
+
 For every variant, pressing Caps a second time before the deadline cancels the pending tap and activates Momentary Layer 3 until the second Caps release. The second press and release do not execute the binding at the Caps position on Layer 3. At or after the logical deadline, the previous sequence resolves first and the next Caps press starts a new sequence.
 
-The implementation lives in `src/behaviors/behavior_caps_multi_role.c` and delegates its outputs to three Devicetree child bindings. PC instances use `<&kp LANG1>, <&kp LCTRL>, <&mo 3>`; Mac instances use `<&kp LC(SPACE)>, <&kp LCTRL>, <&mo 3>`. Timer callbacks and Balanced capture ownership both validate the current sequence generation so stale work cannot emit or replay input.
+The implementation lives in `src/behaviors/behavior_caps_multi_role.c` and delegates its outputs to three Devicetree child bindings. PC instances use `<&kp LANG1>, <&kp LCTRL>, <&mo 3>`; Mac instances use `<&kp LC(SPACE)>, <&kp LCTRL>, <&mo 3>`. Timer callbacks and deferred capture ownership validate the current sequence generation so stale work cannot emit or replay input.
 
 The following zero-parameter mod-morph behaviors are available for assignment in ZMK Studio:
 
@@ -68,7 +72,7 @@ The following zero-parameter mod-morph behaviors are available for assignment in
 
 The custom behavior nodes intentionally do not use `/omit-if-no-ref/`. They must remain in the compiled Devicetree even when a stock binding does not reference them, so ZMK Studio can offer them for assignment. Only Left Ctrl triggers the Ctrl-based morphs; Right Ctrl continues to produce the original Ctrl-modified key.
 
-The compiled stock keymap uses `Caps Multi - Balanced (PC)` on the PC base layer and `Caps Multi - Balanced (Mac)` on the Mac layer. A normal flash preserves the existing persistent Studio keymap, so reconnect Studio and assign either Balanced behavior manually to use it without restoring stock settings. The original hold-preferred variants remain available for users who prefer immediate Ctrl resolution.
+The compiled stock keymap uses `Caps Multi - Overlap (PC)` on the PC base layer and `Caps Multi - Overlap (Mac)` on the Mac layer. A normal flash preserves the existing persistent Studio keymap, so reconnect Studio and assign the corresponding Overlap behavior manually to use it without restoring stock settings. The original hold-preferred and Balanced variants remain available for comparison.
 
 ## First-flash verification
 

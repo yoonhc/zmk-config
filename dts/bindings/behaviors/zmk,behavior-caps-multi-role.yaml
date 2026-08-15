@@ -17,6 +17,11 @@ properties:
     required: true
     description: Logical deadline measured from the first press timestamp
 
+  overlap-term-ms:
+    type: int
+    default: 35
+    description: Minimum simultaneous press time before an overlap interrupt resolves as hold
+
   interrupt-flavor:
     type: string
     required: false
@@ -24,4 +29,5 @@ properties:
     enum:
       - "hold-preferred"
       - "balanced"
+      - "overlap"
     description: How another key resolves an undecided first press

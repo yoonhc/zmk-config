@@ -1,0 +1,20 @@
+#include "../behavior_keymap.dtsi"
+
+&default_layer {
+    bindings = <
+        &caps_multi_overlap_test &kp A
+        &kp C                   &none
+    >;
+};
+
+&kscan {
+    events = <
+        ZMK_MOCK_PRESS(0, 0, 50)
+        ZMK_MOCK_PRESS(0, 1, 10)
+        ZMK_MOCK_PRESS(1, 0, 5)
+        /* Releasing a later captured key must not decide the sequence. */
+        ZMK_MOCK_RELEASE(1, 0, 5)
+        ZMK_MOCK_RELEASE(0, 0, 10)
+        ZMK_MOCK_RELEASE(0, 1, 10)
+    >;
+};

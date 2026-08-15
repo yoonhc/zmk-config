@@ -6,9 +6,10 @@
  *   hold / interrupt     -> binding 1
  *   tap, then press/hold -> binding 2
  *
- * Interrupts can resolve immediately (hold-preferred) or by release order
- * (balanced). Balanced instances capture intervening position events until
- * either Caps, an interrupted key, or the logical deadline resolves them.
+ * Interrupts can resolve immediately (hold-preferred), by release order
+ * (balanced), or by release order plus a minimum overlap time (overlap).
+ * Deferred instances capture intervening position events until Caps, the
+ * first interrupted key, or the applicable logical deadline resolves them.
  */
 
 #define DT_DRV_COMPAT zmk_behavior_caps_multi_role
@@ -41,6 +42,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 enum caps_multi_interrupt_flavor {
     CAPS_MULTI_HOLD_PREFERRED,
     CAPS_MULTI_BALANCED,
+    CAPS_MULTI_OVERLAP,
 };
 
 enum caps_multi_state {
@@ -59,6 +61,7 @@ enum caps_multi_child {
 
 struct caps_multi_config {
     uint32_t tapping_term_ms;
+    uint32_t overlap_term_ms;
     enum caps_multi_interrupt_flavor interrupt_flavor;
     struct zmk_behavior_binding bindings[CAPS_MULTI_BINDING_COUNT];
 };
@@ -71,6 +74,7 @@ struct caps_multi_active {
 #endif
     const struct caps_multi_config *config;
     int64_t deadline;
+    int64_t timer_deadline;
     uint32_t generation;
 
     struct k_work_delayable timer;
@@ -85,6 +89,8 @@ struct caps_multi_capture {
     struct caps_multi_active *owner;
     uint32_t owner_generation;
     int64_t first_interrupt_timestamp;
+    uint32_t first_interrupt_position;
+    uint8_t first_interrupt_source;
     uint8_t count;
     bool replaying;
     struct zmk_position_state_changed_event events[CAPS_MULTI_MAX_CAPTURED_EVENTS];
@@ -96,6 +102,14 @@ extern const struct zmk_listener zmk_listener_behavior_caps_multi_role;
 
 static bool is_balanced(const struct caps_multi_active *active) {
     return active->config->interrupt_flavor == CAPS_MULTI_BALANCED;
+}
+
+static bool is_overlap(const struct caps_multi_active *active) {
+    return active->config->interrupt_flavor == CAPS_MULTI_OVERLAP;
+}
+
+static bool uses_deferred_interrupt(const struct caps_multi_active *active) {
+    return is_balanced(active) || is_overlap(active);
 }
 
 static bool capture_owned_by(const struct caps_multi_active *active) {
@@ -110,6 +124,8 @@ static bool detach_capture(const struct caps_multi_active *active) {
     captured.owner = NULL;
     captured.owner_generation = 0;
     captured.first_interrupt_timestamp = 0;
+    captured.first_interrupt_position = CAPS_MULTI_POSITION_FREE;
+    captured.first_interrupt_source = 0;
     return true;
 }
 
@@ -133,15 +149,20 @@ static void replay_captured_events(void) {
 }
 
 static bool captured_key_is_down(const struct zmk_position_state_changed *event) {
-    for (int i = 0; i < captured.count; i++) {
+    for (int i = captured.count - 1; i >= 0; i--) {
         const struct zmk_position_state_changed *captured_event = &captured.events[i].data;
-        if (captured_event->position == event->position && captured_event->source == event->source &&
-            captured_event->state) {
-            return true;
+        if (captured_event->position == event->position &&
+            captured_event->source == event->source) {
+            return captured_event->state;
         }
     }
 
     return false;
+}
+
+static bool is_first_interrupt(const struct zmk_position_state_changed *event) {
+    return event->position == captured.first_interrupt_position &&
+           event->source == captured.first_interrupt_source;
 }
 
 static int capture_position_event(const struct zmk_position_state_changed *event) {
@@ -211,6 +232,7 @@ static void clear_active(struct caps_multi_active *active) {
     active->position = CAPS_MULTI_POSITION_FREE;
     active->config = NULL;
     active->deadline = 0;
+    active->timer_deadline = 0;
 }
 
 static void resolve_pending_tap(struct caps_multi_active *active, int64_t timestamp) {
@@ -250,14 +272,31 @@ static void resolve_interrupted_tap(struct caps_multi_active *active, int64_t ti
 static void resolve_deadline(struct caps_multi_active *active) {
     switch (active->state) {
     case CAPS_MULTI_FIRST_DOWN:
-        resolve_first_hold(active, active->deadline);
+        resolve_first_hold(active, active->timer_deadline);
         break;
     case CAPS_MULTI_TAP_PENDING:
-        resolve_pending_tap(active, active->deadline);
+        resolve_pending_tap(active, active->timer_deadline);
         break;
     default:
         break;
     }
+}
+
+static bool schedule_deadline(struct caps_multi_active *active, int64_t deadline) {
+    active->timer_deadline = deadline;
+    active->timer_generation = active->generation;
+    active->timer_pending = true;
+
+    int64_t delay_ms = deadline - k_uptime_get();
+    if (delay_ms <= 0) {
+        active->timer_pending = false;
+        active->timer_generation = 0;
+        resolve_deadline(active);
+        return true;
+    }
+
+    k_work_reschedule(&active->timer, K_MSEC(delay_ms));
+    return false;
 }
 
 static void caps_multi_timer_handler(struct k_work *work) {
@@ -309,18 +348,8 @@ static int start_first_press(const struct caps_multi_config *config,
 #endif
     active->config = config;
     active->deadline = event.timestamp + config->tapping_term_ms;
-    active->timer_generation = active->generation;
-    active->timer_pending = true;
     active->timer_cleanup_pending = false;
-
-    int64_t delay_ms = active->deadline - k_uptime_get();
-    if (delay_ms <= 0) {
-        active->timer_pending = false;
-        active->timer_generation = 0;
-        resolve_deadline(active);
-    } else {
-        k_work_schedule(&active->timer, K_MSEC(delay_ms));
-    }
+    schedule_deadline(active, active->deadline);
 
     return 0;
 }
@@ -371,14 +400,14 @@ static int caps_multi_binding_released(struct zmk_behavior_binding *binding,
 
     switch (active->state) {
     case CAPS_MULTI_FIRST_DOWN:
-        if (event.timestamp < active->deadline) {
+        if (event.timestamp < active->timer_deadline) {
             if (capture_owned_by(active)) {
                 resolve_interrupted_tap(active, event.timestamp);
             } else {
                 active->state = CAPS_MULTI_TAP_PENDING;
             }
         } else {
-            resolve_first_hold(active, active->deadline);
+            resolve_first_hold(active, active->timer_deadline);
             int err = invoke_child(active, CAPS_MULTI_HOLD, false, event.timestamp);
             if (err < 0) {
                 LOG_ERR("Failed to release hold child behavior: %d", err);
@@ -428,7 +457,7 @@ static int caps_multi_position_listener(const zmk_event_t *event_header) {
 
         if ((active->state == CAPS_MULTI_FIRST_DOWN ||
              active->state == CAPS_MULTI_TAP_PENDING) &&
-            event->timestamp >= active->deadline) {
+            event->timestamp >= active->timer_deadline) {
             resolve_deadline(active);
         }
     }
@@ -437,11 +466,13 @@ static int caps_multi_position_listener(const zmk_event_t *event_header) {
         struct caps_multi_active *owner = captured.owner;
 
         if (!capture_owned_by(owner) || owner->state != CAPS_MULTI_FIRST_DOWN ||
-            !is_balanced(owner)) {
-            LOG_ERR("Discarding stale balanced capture owner");
+            !uses_deferred_interrupt(owner)) {
+            LOG_ERR("Discarding stale deferred capture owner");
             captured.owner = NULL;
             captured.owner_generation = 0;
             captured.first_interrupt_timestamp = 0;
+            captured.first_interrupt_position = CAPS_MULTI_POSITION_FREE;
+            captured.first_interrupt_source = 0;
             replay_captured_events();
         } else if (owner->position != event->position) {
             if (!event->state && !captured_key_is_down(event)) {
@@ -450,12 +481,13 @@ static int caps_multi_position_listener(const zmk_event_t *event_header) {
 
             int err = capture_position_event(event);
             if (err < 0) {
-                LOG_WRN("Balanced capture buffer full; resolving as hold");
+                LOG_WRN("Deferred capture buffer full; resolving as hold");
                 resolve_first_hold(owner, captured.first_interrupt_timestamp);
                 return ZMK_EV_EVENT_BUBBLE;
             }
 
-            if (!event->state) {
+            if (!event->state &&
+                (is_balanced(owner) || (is_overlap(owner) && is_first_interrupt(event)))) {
                 resolve_first_hold(owner, captured.first_interrupt_timestamp);
             }
 
@@ -474,17 +506,25 @@ static int caps_multi_position_listener(const zmk_event_t *event_header) {
         }
 
         if (active->state == CAPS_MULTI_FIRST_DOWN) {
-            if (is_balanced(active)) {
+            if (uses_deferred_interrupt(active)) {
                 captured.owner = active;
                 captured.owner_generation = active->generation;
                 captured.first_interrupt_timestamp = event->timestamp;
+                captured.first_interrupt_position = event->position;
+                captured.first_interrupt_source = event->source;
                 captured.count = 0;
 
                 int err = capture_position_event(event);
                 if (err < 0) {
-                    LOG_WRN("Unable to start balanced capture; resolving as hold");
+                    LOG_WRN("Unable to start deferred capture; resolving as hold");
                     resolve_first_hold(active, event->timestamp);
                     return ZMK_EV_EVENT_BUBBLE;
+                }
+
+                if (is_overlap(active)) {
+                    int64_t overlap_deadline =
+                        event->timestamp + active->config->overlap_term_ms;
+                    schedule_deadline(active, MIN(active->deadline, overlap_deadline));
                 }
 
                 return ZMK_EV_EVENT_CAPTURED;
@@ -533,6 +573,7 @@ static int caps_multi_init(const struct device *dev) {
                  "Caps multi-role requires exactly three bindings");                            \
     static const struct caps_multi_config caps_multi_config_##n = {                              \
         .tapping_term_ms = DT_INST_PROP(n, tapping_term_ms),                                     \
+        .overlap_term_ms = DT_INST_PROP(n, overlap_term_ms),                                     \
         .interrupt_flavor = DT_INST_ENUM_IDX_OR(n, interrupt_flavor, 0),                         \
         .bindings = {ZMK_KEYMAP_EXTRACT_BINDING(0, DT_DRV_INST(n)),                              \
                      ZMK_KEYMAP_EXTRACT_BINDING(1, DT_DRV_INST(n)),                              \
