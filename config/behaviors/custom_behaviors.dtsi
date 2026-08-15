@@ -52,7 +52,7 @@
             compatible = "zmk,behavior-caps-multi-role";
             #binding-cells = <0>;
             tapping-term-ms = <260>;
-            overlap-term-ms = <35>;
+            overlap-term-ms = <38>;
             interrupt-flavor = "overlap";
             bindings = <&kp LANG1>, <&kp LCTRL>, <&mo 3>;
             display-name = "Caps Multi - Overlap (PC)";
@@ -62,7 +62,7 @@
             compatible = "zmk,behavior-caps-multi-role";
             #binding-cells = <0>;
             tapping-term-ms = <260>;
-            overlap-term-ms = <35>;
+            overlap-term-ms = <38>;
             interrupt-flavor = "overlap";
             bindings = <&kp LC(SPACE)>, <&kp LCTRL>, <&mo 3>;
             display-name = "Caps Multi - Overlap (Mac)";

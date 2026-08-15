@@ -22,8 +22,8 @@ ZMK Studio에서는 다음 두 behavior를 사용할 수 있다.
 
 | Studio behavior | Keymap binding 예시 | Tap 출력 |
 | --- | --- | --- |
-| `Caps Multi - Overlap Tunable (PC)` | `&caps_multi_overlap_tunable 35` | `LANG1` |
-| `Caps Multi - Overlap Tunable (Mac)` | `&caps_multi_overlap_tunable_mac 35` | `Left Control + Space` |
+| `Caps Multi - Overlap Tunable (PC)` | `&caps_multi_overlap_tunable 38` | `LANG1` |
+| `Caps Multi - Overlap Tunable (Mac)` | `&caps_multi_overlap_tunable_mac 38` | `Left Control + Space` |
 
 마지막 숫자는 해당 키에 적용할 overlap term `T`이며 단위는 ms이다.
 
@@ -34,7 +34,7 @@ ZMK Studio에서는 다음 두 behavior를 사용할 수 있다.
 - **Main deadline**: 첫 Caps press timestamp + `260ms`
 - **Overlap deadline**: 첫 interrupt key press timestamp + `T`
 
-`T`의 범위는 `5–100ms`이고 권장 시작값은 `35ms`이다. 두 deadline이 모두 존재할 때 먼저 도달하는 deadline이 현재 sequence를 resolve한다.
+`T`의 범위는 `5–100ms`이고 권장 시작값은 `38ms`이다. 두 deadline이 모두 존재할 때 먼저 도달하는 deadline이 현재 sequence를 resolve한다.
 
 시간 비교 경계는 다음과 같다.
 
@@ -267,7 +267,7 @@ CTRL_HELD  -- Caps UP ----------------------------> IDLE
 
 ## 5. 시간축 예시
 
-아래 예시에서 `T = 35ms`로 가정한다.
+아래 예시에서 `T = 38ms`로 가정한다.
 
 ### A. PC에서 일반 한/영 전환
 
@@ -327,14 +327,14 @@ Ctrl+C
 ```text
 0ms      Caps DOWN
 40ms     C DOWN              → capture
-75ms     overlap = 35ms      → Ctrl 확정
+78ms     overlap = 38ms      → Ctrl 확정
                               LCTRL DOWN
                               C DOWN replay
 80ms     Caps UP             → LCTRL UP
 100ms    C UP
 ```
 
-75ms에 Ctrl이 확정됐으므로 이후 Caps가 먼저 올라와도 Tap으로 바뀌지 않는다.
+78ms에 Ctrl이 확정됐으므로 이후 Caps가 먼저 올라와도 Tap으로 바뀌지 않는다.
 
 ### F. Caps만 오래 Hold
 
@@ -363,7 +363,7 @@ Mac variant에서는 `LANG1` 대신 `Left Control + Space`를 먼저 전송한�
 
 ```text
 0ms      Caps DOWN
-240ms    A DOWN              → capture, overlap deadline = 275ms
+240ms    A DOWN              → capture, overlap deadline = 278ms
 260ms    main deadline       → Ctrl 확정
                               LCTRL DOWN
                               A DOWN replay
@@ -384,13 +384,13 @@ Mac variant에서는 `LANG1` 대신 `Left Control + Space`를 먼저 전송한�
 
 ## 6. 경계값
 
-`T = 35ms`일 때의 대표적인 경계는 다음과 같다.
+`T = 38ms`일 때의 대표적인 경계는 다음과 같다.
 
 | 입력 | 결과 |
 | --- | --- |
-| Caps가 먼저 release, overlap `34ms` | Tap |
-| Caps가 먼저 release, overlap `35ms` | Ctrl |
-| First interrupt가 `35ms` 전에 먼저 release | Ctrl |
+| Caps가 먼저 release, overlap `37ms` | Tap |
+| Caps가 먼저 release, overlap `38ms` | Ctrl |
+| First interrupt가 `38ms` 전에 먼저 release | Ctrl |
 | Caps만 `259ms`에 release | Tap pending |
 | Caps만 `260ms`에 release | Ctrl Hold sequence |
 | Second Caps DOWN이 first press 후 `259ms` | Layer 3 |
@@ -410,26 +410,26 @@ Mac variant에서는 `LANG1` 대신 `Left Control + Space`를 먼저 전송한�
 Parameter는 첫 Caps DOWN에서 해당 sequence용 값으로 복사된다. Studio에서 값을 변경하더라도 이미 진행 중인 sequence에는 영향을 주지 않고 다음 Caps press부터 적용된다.
 
 - 허용 범위: `5–100ms`
-- 권장 시작값: `35ms`
-- 수동 keymap에서 범위를 벗어난 값: `35ms`로 fallback
+- 권장 시작값: `38ms`
+- 수동 keymap에서 범위를 벗어난 값: `38ms`로 fallback
 
 작은 값은 Control을 더 빨리 확정하고, 큰 값은 Caps가 먼저 올라오는 빠른 roll을 Tap으로 인정할 여유를 늘린다.
 
 ## 8. 고정 Overlap Variant와의 관계
 
-현재 compiled stock keymap은 다음 고정 35ms behavior를 사용한다.
+현재 compiled stock keymap은 다음 Tunable behavior를 `38ms` parameter로 사용한다.
 
-- PC layer: `Caps Multi - Overlap (PC)`
-- Mac layer: `Caps Multi - Overlap (Mac)`
+- PC layer: `Caps Multi - Overlap Tunable (PC)`
+- Mac layer: `Caps Multi - Overlap Tunable (Mac)`
 
-Tunable variant는 ZMK Studio에서 직접 선택하고 `Overlap (ms)` 값을 입력해 배치한다. 고정 variant와 Tunable variant의 state machine은 같으며, overlap term의 출처만 다르다.
+고정 variant와 Tunable variant의 state machine은 같으며, overlap term의 출처만 다르다. 고정 variant도 비교용 Studio behavior로 남아 있고 그 값은 `38ms`이다.
 
 ```text
-Fixed Overlap     → Devicetree의 overlap-term-ms = 35
+Fixed Overlap     → Devicetree의 overlap-term-ms = 38
 Overlap Tunable   → key binding parameter로 T 입력
 ```
 
-일반 firmware flash는 기존 Studio keymap을 보존하므로 값을 시험하기 위해 **Restore Stock Settings**를 실행할 필요는 없다.
+일반 firmware flash는 기존 Studio keymap을 보존하므로 기존의 고정 Caps binding이 새 stock binding으로 자동 교체되지는 않는다. 현재 Studio 설정을 유지하려면 Caps 위치에 Tunable behavior와 `38`을 직접 배치하면 된다. 새 compiled stock binding 전체를 불러오려는 경우에만 기존 runtime 변경을 지우는 **Restore Stock Settings**를 의도적으로 사용한다.
 
 ## 9. 한 문장 요약
 

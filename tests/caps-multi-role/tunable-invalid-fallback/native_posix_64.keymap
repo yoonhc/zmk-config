@@ -11,7 +11,7 @@
     events = <
         ZMK_MOCK_PRESS(0, 0, 10)
         ZMK_MOCK_PRESS(0, 1, 20)
-        /* Invalid zero falls back to 35 ms, so Caps releasing at 20 ms taps. */
+        /* Invalid zero falls back to 38 ms, so Caps releasing at 20 ms taps. */
         ZMK_MOCK_RELEASE(0, 0, 20)
         ZMK_MOCK_RELEASE(0, 1, 20)
     >;
