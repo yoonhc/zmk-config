@@ -30,6 +30,24 @@
             display-name = "Caps Multi (Mac)";
         };
 
+        caps_multi_balanced: caps_multi_role_balanced {
+            compatible = "zmk,behavior-caps-multi-role";
+            #binding-cells = <0>;
+            tapping-term-ms = <260>;
+            interrupt-flavor = "balanced";
+            bindings = <&kp LANG1>, <&kp LCTRL>, <&mo 3>;
+            display-name = "Caps Multi - Balanced (PC)";
+        };
+
+        caps_multi_balanced_mac: caps_multi_role_balanced_mac {
+            compatible = "zmk,behavior-caps-multi-role";
+            #binding-cells = <0>;
+            tapping-term-ms = <260>;
+            interrupt-flavor = "balanced";
+            bindings = <&kp LC(SPACE)>, <&kp LCTRL>, <&mo 3>;
+            display-name = "Caps Multi - Balanced (Mac)";
+        };
+
         bspc_del: backspace_delete {
             compatible = "zmk,behavior-mod-morph";
             #binding-cells = <0>;

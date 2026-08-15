@@ -3,8 +3,12 @@
  *
  * A timestamp-driven three-way behavior:
  *   tap                  -> binding 0
- *   hold / interrupted   -> binding 1
+ *   hold / interrupt     -> binding 1
  *   tap, then press/hold -> binding 2
+ *
+ * Interrupts can resolve immediately (hold-preferred) or by release order
+ * (balanced). Balanced instances capture intervening position events until
+ * either Caps, an interrupted key, or the logical deadline resolves them.
  */
 
 #define DT_DRV_COMPAT zmk_behavior_caps_multi_role
@@ -31,6 +35,13 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #define CAPS_MULTI_POSITION_FREE UINT32_MAX
 #define CAPS_MULTI_BINDING_COUNT 3
 #define CAPS_MULTI_MAX_ACTIVE CONFIG_ZMK_BEHAVIOR_CAPS_MULTI_ROLE_MAX_ACTIVE
+#define CAPS_MULTI_MAX_CAPTURED_EVENTS                                                        \
+    CONFIG_ZMK_BEHAVIOR_CAPS_MULTI_ROLE_MAX_CAPTURED_EVENTS
+
+enum caps_multi_interrupt_flavor {
+    CAPS_MULTI_HOLD_PREFERRED,
+    CAPS_MULTI_BALANCED,
+};
 
 enum caps_multi_state {
     CAPS_MULTI_FREE,
@@ -48,6 +59,7 @@ enum caps_multi_child {
 
 struct caps_multi_config {
     uint32_t tapping_term_ms;
+    enum caps_multi_interrupt_flavor interrupt_flavor;
     struct zmk_behavior_binding bindings[CAPS_MULTI_BINDING_COUNT];
 };
 
@@ -68,6 +80,78 @@ struct caps_multi_active {
 };
 
 static struct caps_multi_active active_sequences[CAPS_MULTI_MAX_ACTIVE];
+
+struct caps_multi_capture {
+    struct caps_multi_active *owner;
+    uint32_t owner_generation;
+    int64_t first_interrupt_timestamp;
+    uint8_t count;
+    bool replaying;
+    struct zmk_position_state_changed_event events[CAPS_MULTI_MAX_CAPTURED_EVENTS];
+};
+
+static struct caps_multi_capture captured;
+
+extern const struct zmk_listener zmk_listener_behavior_caps_multi_role;
+
+static bool is_balanced(const struct caps_multi_active *active) {
+    return active->config->interrupt_flavor == CAPS_MULTI_BALANCED;
+}
+
+static bool capture_owned_by(const struct caps_multi_active *active) {
+    return captured.owner == active && captured.owner_generation == active->generation;
+}
+
+static bool detach_capture(const struct caps_multi_active *active) {
+    if (!capture_owned_by(active)) {
+        return false;
+    }
+
+    captured.owner = NULL;
+    captured.owner_generation = 0;
+    captured.first_interrupt_timestamp = 0;
+    return true;
+}
+
+static void replay_captured_events(void) {
+    if (captured.count == 0) {
+        return;
+    }
+
+    captured.replaying = true;
+    uint8_t count = captured.count;
+
+    for (int i = 0; i < count; i++) {
+        int err = ZMK_EVENT_RAISE_AT(captured.events[i], behavior_caps_multi_role);
+        if (err < 0) {
+            LOG_ERR("Failed to replay captured position event: %d", err);
+        }
+    }
+
+    captured.count = 0;
+    captured.replaying = false;
+}
+
+static bool captured_key_is_down(const struct zmk_position_state_changed *event) {
+    for (int i = 0; i < captured.count; i++) {
+        const struct zmk_position_state_changed *captured_event = &captured.events[i].data;
+        if (captured_event->position == event->position && captured_event->source == event->source &&
+            captured_event->state) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static int capture_position_event(const struct zmk_position_state_changed *event) {
+    if (captured.count >= CAPS_MULTI_MAX_CAPTURED_EVENTS) {
+        return -ENOMEM;
+    }
+
+    captured.events[captured.count++] = copy_raised_zmk_position_state_changed(event);
+    return 0;
+}
 
 static struct zmk_behavior_binding_event child_event(const struct caps_multi_active *active,
                                                      int64_t timestamp) {
@@ -136,12 +220,30 @@ static void resolve_pending_tap(struct caps_multi_active *active, int64_t timest
 }
 
 static void resolve_first_hold(struct caps_multi_active *active, int64_t timestamp) {
+    bool replay = detach_capture(active);
+
     invalidate_timer(active);
     active->state = CAPS_MULTI_CTRL_HELD;
 
     int err = invoke_child(active, CAPS_MULTI_HOLD, true, timestamp);
     if (err < 0) {
         LOG_ERR("Failed to press hold child behavior: %d", err);
+    }
+
+    if (replay) {
+        replay_captured_events();
+    }
+}
+
+static void resolve_interrupted_tap(struct caps_multi_active *active, int64_t timestamp) {
+    bool replay = detach_capture(active);
+
+    invalidate_timer(active);
+    invoke_tap(active, timestamp);
+    clear_active(active);
+
+    if (replay) {
+        replay_captured_events();
     }
 }
 
@@ -270,7 +372,11 @@ static int caps_multi_binding_released(struct zmk_behavior_binding *binding,
     switch (active->state) {
     case CAPS_MULTI_FIRST_DOWN:
         if (event.timestamp < active->deadline) {
-            active->state = CAPS_MULTI_TAP_PENDING;
+            if (capture_owned_by(active)) {
+                resolve_interrupted_tap(active, event.timestamp);
+            } else {
+                active->state = CAPS_MULTI_TAP_PENDING;
+            }
         } else {
             resolve_first_hold(active, active->deadline);
             int err = invoke_child(active, CAPS_MULTI_HOLD, false, event.timestamp);
@@ -309,10 +415,11 @@ static int caps_multi_position_listener(const zmk_event_t *event_header) {
     const struct zmk_position_state_changed *event =
         as_zmk_position_state_changed(event_header);
 
-    if (event == NULL || !event->state) {
+    if (event == NULL || captured.replaying) {
         return ZMK_EV_EVENT_BUBBLE;
     }
 
+    /* Enforce the logical deadline before handling a later physical event. */
     for (int i = 0; i < CAPS_MULTI_MAX_ACTIVE; i++) {
         struct caps_multi_active *active = &active_sequences[i];
         if (active->state == CAPS_MULTI_FREE || active->position == event->position) {
@@ -323,11 +430,67 @@ static int caps_multi_position_listener(const zmk_event_t *event_header) {
              active->state == CAPS_MULTI_TAP_PENDING) &&
             event->timestamp >= active->deadline) {
             resolve_deadline(active);
+        }
+    }
+
+    if (captured.owner != NULL) {
+        struct caps_multi_active *owner = captured.owner;
+
+        if (!capture_owned_by(owner) || owner->state != CAPS_MULTI_FIRST_DOWN ||
+            !is_balanced(owner)) {
+            LOG_ERR("Discarding stale balanced capture owner");
+            captured.owner = NULL;
+            captured.owner_generation = 0;
+            captured.first_interrupt_timestamp = 0;
+            replay_captured_events();
+        } else if (owner->position != event->position) {
+            if (!event->state && !captured_key_is_down(event)) {
+                return ZMK_EV_EVENT_BUBBLE;
+            }
+
+            int err = capture_position_event(event);
+            if (err < 0) {
+                LOG_WRN("Balanced capture buffer full; resolving as hold");
+                resolve_first_hold(owner, captured.first_interrupt_timestamp);
+                return ZMK_EV_EVENT_BUBBLE;
+            }
+
+            if (!event->state) {
+                resolve_first_hold(owner, captured.first_interrupt_timestamp);
+            }
+
+            return ZMK_EV_EVENT_CAPTURED;
+        }
+    }
+
+    if (!event->state) {
+        return ZMK_EV_EVENT_BUBBLE;
+    }
+
+    for (int i = 0; i < CAPS_MULTI_MAX_ACTIVE; i++) {
+        struct caps_multi_active *active = &active_sequences[i];
+        if (active->state == CAPS_MULTI_FREE || active->position == event->position) {
             continue;
         }
 
         if (active->state == CAPS_MULTI_FIRST_DOWN) {
-            /* The hold child must be down before this event reaches the keymap listener. */
+            if (is_balanced(active)) {
+                captured.owner = active;
+                captured.owner_generation = active->generation;
+                captured.first_interrupt_timestamp = event->timestamp;
+                captured.count = 0;
+
+                int err = capture_position_event(event);
+                if (err < 0) {
+                    LOG_WRN("Unable to start balanced capture; resolving as hold");
+                    resolve_first_hold(active, event->timestamp);
+                    return ZMK_EV_EVENT_BUBBLE;
+                }
+
+                return ZMK_EV_EVENT_CAPTURED;
+            }
+
+            /* Hold-preferred keeps the original immediate interrupt behavior. */
             resolve_first_hold(active, event->timestamp);
         } else if (active->state == CAPS_MULTI_TAP_PENDING) {
             /* Flush the tap child before this event reaches the keymap listener. */
@@ -370,6 +533,7 @@ static int caps_multi_init(const struct device *dev) {
                  "Caps multi-role requires exactly three bindings");                            \
     static const struct caps_multi_config caps_multi_config_##n = {                              \
         .tapping_term_ms = DT_INST_PROP(n, tapping_term_ms),                                     \
+        .interrupt_flavor = DT_INST_ENUM_IDX_OR(n, interrupt_flavor, 0),                         \
         .bindings = {ZMK_KEYMAP_EXTRACT_BINDING(0, DT_DRV_INST(n)),                              \
                      ZMK_KEYMAP_EXTRACT_BINDING(1, DT_DRV_INST(n)),                              \
                      ZMK_KEYMAP_EXTRACT_BINDING(2, DT_DRV_INST(n))},                             \

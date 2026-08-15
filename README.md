@@ -36,36 +36,39 @@ Download the generated firmware artifact from the completed workflow run and use
 
 ## Personal keymap and Studio behaviors
 
-`config/tofu60_ble_v3_ansi_7u.keymap` is the compiled stock keymap source for this build. It reproduces the effective OpenKBD `260511` common and ANSI keymaps, then includes the personal behavior definitions from `config/behaviors/custom_behaviors.dtsi`. The only changed stock binding is the base-layer Caps Lock position, which now uses `&caps_multi`.
+`config/tofu60_ble_v3_ansi_7u.keymap` is the compiled stock keymap source for this build. It starts from the effective OpenKBD `260511` common and ANSI keymaps, includes the personal behavior definitions from `config/behaviors/custom_behaviors.dtsi`, and defines the customized PC, Mac, function, and control-chord layers.
 
 ### Caps Multi-Role
 
-The two Caps Multi-Role variants are custom, zero-parameter Studio behaviors with a 260 ms logical deadline measured from the first press timestamp:
+The Caps Multi-Role behaviors are custom, zero-parameter Studio behaviors with a 260 ms logical deadline measured from the first press timestamp. Each PC/Mac output variant is available with two interrupt policies:
 
-| Input | `Caps Multi (Win)` | `Caps Multi (Mac)` |
-| --- | --- | --- |
-| Tap once | `LANG1` | Left Control + Space |
-| Hold once, or press another key while holding | Left Control | Left Control |
-| Tap, then press again within 260 ms | Momentary Layer 3 | Momentary Layer 3 |
+| Studio behavior | Tap | Hold | Interrupt policy |
+| --- | --- | --- | --- |
+| `Caps Multi (PC)` | `LANG1` | Left Control | Hold-preferred: another key press immediately selects Control |
+| `Caps Multi (Mac)` | Left Control + Space | Left Control | Hold-preferred: another key press immediately selects Control |
+| `Caps Multi - Balanced (PC)` | `LANG1` | Left Control | Release-order: Caps released first selects tap; the other key released first selects Control |
+| `Caps Multi - Balanced (Mac)` | Left Control + Space | Left Control | Release-order: Caps released first selects tap; the other key released first selects Control |
 
-If another key is pressed while a single tap is pending, the selected tap action is emitted before that key is processed. A second Caps press before the deadline cancels the pending tap action; the second press and release do not execute the binding at the Caps position on Layer 3. At or after the logical deadline, the previous sequence resolves first and the next Caps press starts a new sequence.
+For a Balanced instance, position events are buffered while release order is undecided. If Caps is released first, the tap action is emitted before the buffered key. If an interrupted key is released first, or the 260 ms deadline is reached, Control is pressed before the buffered events are replayed. This avoids accidental Control chords when a mechanical switch has not electrically released before the next key press.
 
-The implementation lives in `src/behaviors/behavior_caps_multi_role.c` and delegates its outputs to three Devicetree child bindings. The Windows instance uses `<&kp LANG1>, <&kp LCTRL>, <&mo 3>`; the Mac instance uses `<&kp LC(SPACE)>, <&kp LCTRL>, <&mo 3>`. Timer callbacks validate both the current state and sequence generation so a cancelled callback cannot emit a stale tap action.
+For every variant, pressing Caps a second time before the deadline cancels the pending tap and activates Momentary Layer 3 until the second Caps release. The second press and release do not execute the binding at the Caps position on Layer 3. At or after the logical deadline, the previous sequence resolves first and the next Caps press starts a new sequence.
+
+The implementation lives in `src/behaviors/behavior_caps_multi_role.c` and delegates its outputs to three Devicetree child bindings. PC instances use `<&kp LANG1>, <&kp LCTRL>, <&mo 3>`; Mac instances use `<&kp LC(SPACE)>, <&kp LCTRL>, <&mo 3>`. Timer callbacks and Balanced capture ownership both validate the current sequence generation so stale work cannot emit or replay input.
 
 The following zero-parameter mod-morph behaviors are available for assignment in ZMK Studio:
 
 | Studio name | Binding | Normal press | Modified press |
 | --- | --- | --- | --- |
-| `BSPC / DEL` | `&bspc_del` | Backspace | Left Shift: Delete; Right Shift: Right Shift + Delete |
+| `BSPC / DEL` | `&bspc_del` | Backspace | Left Shift: Delete |
 | `Ctrl+; Left` | `&ctl_semi_left` | `;` | Left Ctrl: Left Arrow |
 | `Ctrl+Quote Right` | `&ctl_sqt_right` | `'` | Left Ctrl: Right Arrow |
 | `Ctrl+[ Up` | `&ctl_lbkt_up` | `[` | Left Ctrl: Up Arrow |
 | `Ctrl+/ Down` | `&ctl_fslh_down` | `/` | Left Ctrl: Down Arrow |
 | `Ctrl+] Caps` | `&ctl_rbkt_caps` | `]` | Left Ctrl: Caps Lock |
 
-The custom behavior nodes intentionally do not use `/omit-if-no-ref/`. They must remain in the compiled Devicetree even though the stock bindings do not reference them, so ZMK Studio can offer them for assignment. Only Left Ctrl triggers the Ctrl-based morphs; Right Ctrl continues to produce the original Ctrl-modified key.
+The custom behavior nodes intentionally do not use `/omit-if-no-ref/`. They must remain in the compiled Devicetree even when a stock binding does not reference them, so ZMK Studio can offer them for assignment. Only Left Ctrl triggers the Ctrl-based morphs; Right Ctrl continues to produce the original Ctrl-modified key.
 
-After flashing this firmware, reconnect ZMK Studio and assign either `Caps Multi (Win)` or `Caps Multi (Mac)` to the current Caps position, then assign the mod-morph behaviors to the desired keys. The compiled stock binding remains the Windows instance (`&caps_multi`). Do not use **Restore Stock Settings** for this step; the existing persistent Studio keymap and Layer 3 can be kept and edited in place.
+The compiled stock keymap uses `Caps Multi - Balanced (PC)` on the PC base layer and `Caps Multi - Balanced (Mac)` on the Mac layer. A normal flash preserves the existing persistent Studio keymap, so reconnect Studio and assign either Balanced behavior manually to use it without restoring stock settings. The original hold-preferred variants remain available for users who prefer immediate Ctrl resolution.
 
 ## First-flash verification
 

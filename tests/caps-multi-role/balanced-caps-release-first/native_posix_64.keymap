@@ -1,0 +1,18 @@
+#include "../behavior_keymap.dtsi"
+
+&default_layer {
+    bindings = <
+        &caps_multi_balanced_test &kp A
+        &kp C                    &none
+    >;
+};
+
+&kscan {
+    events = <
+        ZMK_MOCK_PRESS(0, 0, 50)
+        ZMK_MOCK_PRESS(0, 1, 20)
+        /* The physical Caps release wins even though A was already pressed. */
+        ZMK_MOCK_RELEASE(0, 0, 30)
+        ZMK_MOCK_RELEASE(0, 1, 20)
+    >;
+};

@@ -1,0 +1,18 @@
+#include "../behavior_keymap.dtsi"
+
+&default_layer {
+    bindings = <
+        &caps_multi_balanced_test &kp A
+        &kp C                    &none
+    >;
+};
+
+&kscan {
+    events = <
+        ZMK_MOCK_PRESS(0, 0, 50)
+        ZMK_MOCK_PRESS(0, 1, 260)
+        /* Holding both keys through the deadline resolves as Ctrl+A. */
+        ZMK_MOCK_RELEASE(0, 1, 30)
+        ZMK_MOCK_RELEASE(0, 0, 20)
+    >;
+};

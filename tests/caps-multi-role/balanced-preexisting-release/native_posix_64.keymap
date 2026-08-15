@@ -1,0 +1,20 @@
+#include "../behavior_keymap.dtsi"
+
+&default_layer {
+    bindings = <
+        &caps_multi_balanced_test &kp A
+        &kp C                    &none
+    >;
+};
+
+&kscan {
+    events = <
+        ZMK_MOCK_PRESS(0, 1, 20)
+        ZMK_MOCK_PRESS(0, 0, 50)
+        /* A was already down, so its release must not resolve Caps as hold. */
+        ZMK_MOCK_RELEASE(0, 1, 30)
+        ZMK_MOCK_RELEASE(0, 0, 300)
+        ZMK_MOCK_PRESS(1, 1, 10)
+        ZMK_MOCK_RELEASE(1, 1, 10)
+    >;
+};

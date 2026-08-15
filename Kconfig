@@ -16,4 +16,12 @@ config ZMK_BEHAVIOR_CAPS_MULTI_ROLE_MAX_ACTIVE
     help
       Maximum number of Caps multi-role sequences tracked at once.
 
+config ZMK_BEHAVIOR_CAPS_MULTI_ROLE_MAX_CAPTURED_EVENTS
+    int "Maximum events captured by a balanced Caps multi-role key"
+    default 16
+    range 2 64
+    help
+      Maximum number of position events buffered while a balanced
+      Caps multi-role key waits for release-order resolution.
+
 endif

@@ -16,3 +16,12 @@ properties:
     type: int
     required: true
     description: Logical deadline measured from the first press timestamp
+
+  interrupt-flavor:
+    type: string
+    required: false
+    default: "hold-preferred"
+    enum:
+      - "hold-preferred"
+      - "balanced"
+    description: How another key resolves an undecided first press
