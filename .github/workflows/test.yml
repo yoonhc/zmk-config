@@ -29,3 +29,26 @@ jobs:
           ZMK_BUILD_DIR: /tmp/zmk-caps-tests
           ZMK_EXTRA_MODULES: ${{ github.workspace }}
         run: zmk/app/run-test.sh tests/caps-multi-role
+
+      - name: Report Caps Multi-Role test failures
+        if: failure()
+        shell: bash
+        run: |
+          results=/tmp/zmk-caps-tests/tests/pass-fail.log
+          if [[ -f "$results" ]]; then
+            while IFS= read -r result; do
+              [[ -n "$result" ]] && echo "::error title=Caps Multi-Role test::$result"
+            done < "$results"
+          fi
+
+          while IFS= read -r actual; do
+            case_dir=${actual%/keycode_events.log}
+            case_name=${case_dir#/tmp/zmk-caps-tests/tests/}
+            expected="tests/$case_name/keycode_events.snapshot"
+
+            if [[ -f "$expected" ]] && ! diff -q "$expected" "$actual" >/dev/null; then
+              expected_events=$(tr '\n' ';' < "$expected")
+              actual_events=$(tr '\n' ';' < "$actual")
+              echo "::error title=Snapshot mismatch::$case_name expected: $expected_events actual: $actual_events"
+            fi
+          done < <(find /tmp/zmk-caps-tests/tests -name keycode_events.log -type f)
