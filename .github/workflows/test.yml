@@ -37,7 +37,7 @@ jobs:
           results=/tmp/zmk-caps-tests/tests/pass-fail.log
           if [[ -f "$results" ]]; then
             while IFS= read -r result; do
-              [[ -n "$result" ]] && echo "::error title=Caps Multi-Role test::$result"
+              [[ "$result" == FAILED:* ]] && echo "::error title=Caps Multi-Role test::$result"
             done < "$results"
           fi
 
